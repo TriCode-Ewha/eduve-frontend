@@ -14,7 +14,7 @@ const Login = () => {
     setError("");
 
     try {
-      const response = await axios.post(`http://15.164.97.117:8080/login`,null, {
+      const response = await axios.post(`http://15.165.205.11:8080/login`,null, {
         params: {
           username,
           password
@@ -23,9 +23,12 @@ const Login = () => {
 
       const token = response.data.token;
 
+      const userId = response.data.userId;
+
       // 토큰과 사용자명 저장
       localStorage.setItem("token", token);
       localStorage.setItem("username", username);
+      localStorage.setItem("userId", userId);
 
       // 메인 페이지로 이동
       navigate("/");
@@ -37,7 +40,7 @@ const Login = () => {
 
   return (
     <div className="login-container">
-      <h1 className="title">
+      <h1 className="title" onClick={() => navigate("/")} style={{ cursor: "pointer" }}>
         <span className="edu">Edu</span><span className="ve">'ve</span><span className='com'>.com</span>
       </h1>
       <form className="login-form" onSubmit={handleLogin}>

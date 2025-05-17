@@ -1,7 +1,11 @@
-// src/pages/CharacterPage.js
+// components/CharacterPage.jsx
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./CharacterPage.css";
+import {
+  fetchUserCharacter,
+  updateUserCharacter,
+} from "../api/CharacterApi";
 
 const CharacterPage = () => {
   const navigate = useNavigate();
@@ -13,17 +17,75 @@ const CharacterPage = () => {
   const [customName, setCustomName] = useState("");
   const rangeRef = useRef(null);
 
-  const characters = [
-    { key: "dragon", name: "용용이" },
-    { key: "dog", name: "멍멍이" },
-    { key: "squirrel", name: "다람이" },
-    { key: "cat", name: "냥냥이" },
-    { key: "potato", name: "감자" },
+  const characterList = [
+    { characterId: 1, key: "dragon", name: "용용이", characterImgUrl: "https://eduve1.s3.ap-northeast-2.amazonaws.com/dragon.webp" },
+    { characterId: 2, key: "dog", name: "멍멍이", characterImgUrl: "https://eduve1.s3.ap-northeast-2.amazonaws.com/dog.webp" },
+    { characterId: 3, key: "squirrel", name: "다람이", characterImgUrl: "https://eduve1.s3.ap-northeast-2.amazonaws.com/squirrel.webp" },
+    { characterId: 4, key: "cat", name: "냥냥이", characterImgUrl: "https://eduve1.s3.ap-northeast-2.amazonaws.com/cat.webp" },
+    { characterId: 5, key: "potato", name: "감자", characterImgUrl: "https://eduve1.s3.ap-northeast-2.amazonaws.com/potato.webp" },
   ];
+
+  const toneReverseMap = {
+    FORMAL: "정중한 말투",
+    FRIENDLY: "친근한 말투",
+    KIND: "친절한 말투",
+    TSUNDERE: "츤데레 말투",
+  };
+
+  const levelReverseMap = {
+    LOW: 0,
+    LOW_MID: 1,
+    MID: 2,
+    HIGH: 3,
+    EXPERT: 4,
+  };
 
   useEffect(() => {
     const storedUser = localStorage.getItem("username");
+    const userId = localStorage.getItem("userId");
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      alert("로그인이 필요합니다.");
+      return navigate("/login");
+    }
+
     if (storedUser) setUsername(storedUser);
+
+    if (userId) {
+      fetchUserCharacter(userId, token)
+        .then((data) => {
+          console.log("서버에서 받은 캐릭터 설정:", data);
+          if (!data) return;
+
+          const {
+            characterId,
+            tone: serverTone,
+            descriptionLevel,
+            userCharacterName,
+          } = data;
+
+          const foundIdx = characterList.findIndex((ch) => ch.characterId === characterId);
+          if (foundIdx !== -1) {
+            setSelectedIdx(foundIdx);
+          }
+
+          if (userCharacterName) {
+            setCustomName(userCharacterName);
+          }
+
+          if (serverTone && toneReverseMap[serverTone]) {
+            setTone(toneReverseMap[serverTone]);
+          }
+
+          if (descriptionLevel && levelReverseMap[descriptionLevel] !== undefined) {
+            setLevel(levelReverseMap[descriptionLevel]);
+          }
+        })
+        .catch((err) => {
+          console.error("캐릭터 불러오기 실패:", err);
+        });
+    }
   }, []);
 
   useEffect(() => {
@@ -39,18 +101,45 @@ const CharacterPage = () => {
 
   const handleLogout = () => {
     localStorage.removeItem("username");
+    localStorage.removeItem("userId");
+    localStorage.removeItem("token");
     setUsername("");
     navigate("/");
   };
 
-  const sel = characters[selectedIdx];
+  const selectedCharacter = characterList[selectedIdx] || {};
+
+  const handleSave = () => {
+    const userId = localStorage.getItem("userId");
+    const token = localStorage.getItem("token");
+    if (!userId || !token) return alert("로그인이 필요합니다.");
+
+    const toneMap = {
+      "정중한 말투": "FORMAL",
+      "친근한 말투": "FRIENDLY",
+      "친절한 말투": "KIND",
+      "츤데레 말투": "TSUNDERE",
+    };
+
+    const levelMap = ["LOW", "LOW_MID", "MID", "HIGH", "EXPERT"];
+
+    updateUserCharacter(userId, {
+      characterId: selectedCharacter.characterId,
+      userCharacterName: customName || selectedCharacter.name,
+      tone: toneMap[tone],
+      descriptionLevel: levelMap[level],
+    }, token)
+      .then(() => {
+        alert("캐릭터 설정이 저장되었습니다.");
+        setCustomName(customName || selectedCharacter.name);
+      })
+      .catch((err) => console.error("저장 실패:", err));
+  };
 
   return (
     <div className="character-page-container">
       <nav className="navbar">
-        <h1 className="logo"
-        onClick={() => navigate("/")}
-        style={{ cursor: "pointer" }}>
+        <h1 className="logo" onClick={() => navigate("/")} style={{ cursor: "pointer" }}>
           <span className="edu">Edu</span>
           <span className="ve">'ve</span>
           <span className="com">.com</span>
@@ -60,25 +149,22 @@ const CharacterPage = () => {
           <span onClick={() => navigate("/chat")}>채팅</span>
           <span onClick={() => navigate("/materials")}>학습자료</span>
           {username ? (
-           <div className="user-menu">
-             <button
-               className="user-button"
-               onClick={() => setMenuOpen(open => !open)}
-             >
-               {username} <span className="arrow">▼</span>
+            <div className="user-menu">
+              <button className="user-button" onClick={() => setMenuOpen((open) => !open)}>
+                {username} <span className="arrow">▼</span>
               </button>
-             {menuOpen && (
-               <div className="user-dropdown">
-                 <button onClick={() => {/* 설정 페이지 이동 */}}>
-                   <span className="icon">⚙️</span> 설정
-                 </button>
-                 <button onClick={handleLogout}>
-                   <span className="icon">🚪</span> 로그아웃
-                 </button>
-               </div>
-             )}
-           </div>
-         ) : (
+              {menuOpen && (
+                <div className="user-dropdown">
+                  <button>
+                    <span className="icon">⚙️</span> 설정
+                  </button>
+                  <button onClick={handleLogout}>
+                    <span className="icon">🚪</span> 로그아웃
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
             <>
               <span onClick={() => navigate("/login")}>로그인</span>
               <span onClick={() => navigate("/signup")}>회원가입</span>
@@ -88,30 +174,29 @@ const CharacterPage = () => {
       </nav>
 
       <div className="character-content">
-        {/* 왼쪽 캐릭터 영역 */}
         <div className="character-image">
           <div className="character-image-inner">
-            <img
-              src={`/${sel.key}.png`}
-              alt={sel.name}
-              className="main-image"
-            />
+            {selectedCharacter.characterImgUrl && (
+              <img
+                src={selectedCharacter.characterImgUrl?.replace(/^\[|\]$/g, "")}
+                alt={selectedCharacter.name}
+                className="main-image"
+              />
+            )}
             <p className="character-name">
-              {customName !== ""? customName : sel.name}
+              {customName !== "" ? customName : selectedCharacter.name}
             </p>
 
             <div className="thumbnail-list">
-              {characters.map((ch, i) => (
+              {characterList.map((ch, i) => (
                 <img
-                  key={ch.key}
-                  src={`/${ch.key}.png`}
+                  key={ch.characterId}
+                  src={ch.characterImgUrl}
                   alt={ch.name}
-                  className={
-                    "thumbnail" + (i === selectedIdx ? " selected" : "")
-                  }
+                  className={"thumbnail" + (i === selectedIdx ? " selected" : "")}
                   onClick={() => {
                     setSelectedIdx(i);
-                    setCustomName("");      // ← 캐릭터 바뀌면 커스텀 이름 초기화
+                    setCustomName("");
                   }}
                 />
               ))}
@@ -119,12 +204,9 @@ const CharacterPage = () => {
           </div>
         </div>
 
-        {/* 오른쪽 설정 박스 + 저장 버튼 */}
         <div className="character-settings">
           <div className="settings-box">
-            {/* -- setting-group 동일 -- */}
             <div className="setting-group">
-              {/* 캐릭터 이름 */}
               <div className="setting-item">
                 <label>캐릭터 이름</label>
                 <input
@@ -134,24 +216,20 @@ const CharacterPage = () => {
                   onChange={(e) => setCustomName(e.target.value)}
                 />
               </div>
-              {/* 말투 */}
               <div className="setting-item">
                 <label>말투</label>
                 <div className="tone-buttons">
-                  {["정중한 말투", "친근한 말투", "친절한 말투", "츤데레 말투"].map(
-                    (t) => (
-                      <button
-                        key={t}
-                        className={tone === t ? "selected" : ""}
-                        onClick={() => setTone(t)}
-                      >
-                        {t}
-                      </button>
-                    )
-                  )}
+                  {["정중한 말투", "친근한 말투", "친절한 말투", "츤데레 말투"].map((t) => (
+                    <button
+                      key={t}
+                      className={tone === t ? "selected" : ""}
+                      onClick={() => setTone(t)}
+                    >
+                      {t}
+                    </button>
+                  ))}
                 </div>
               </div>
-              {/* 사용자 수준 */}
               <div className="setting-item">
                 <div className="level-label-wrapper">
                   <label>사용자 수준</label>
@@ -179,8 +257,9 @@ const CharacterPage = () => {
               </div>
             </div>
           </div>
-          {/* 저장 버튼을 박스 바깥으로 */}
-          <button className="save-button">저장</button>
+          <button className="save-button" onClick={handleSave}>
+            저장
+          </button>
         </div>
       </div>
     </div>
