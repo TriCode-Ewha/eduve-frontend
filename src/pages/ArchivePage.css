@@ -104,14 +104,6 @@
   border-radius: 18px;
   border: 1px solid #ccc;
   background-color: #fdf8f2;
-<<<<<<< HEAD
-  /*background-image: url('C:\Users\root\Documents\eduve_fe\eduve-frontend\public\search-button.png');*/
-  background-image: url('../../public/search-button.png');
-  background-repeat: no-repeat;
-  background-position: right 12px center;
-  background-size: 20px;
-=======
->>>>>>> 8ecfb48f70108026030f79a5f33dfc01ddbc9416
   color: #1B512D;
 }
 .no-results-sidebar {
