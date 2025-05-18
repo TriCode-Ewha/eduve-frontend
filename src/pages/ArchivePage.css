@@ -124,7 +124,7 @@
   width: 20px;
   height: 20px;
   border: none;
-  background: url('C:\Users\hhj02\eduve-frontend\public\search-button.png') no-repeat center / cover;
+  background: url('/search-button.png') no-repeat center / cover;
   cursor: pointer;
   background-color: transparent;
   padding: 0;
