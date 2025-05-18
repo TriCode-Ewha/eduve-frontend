@@ -93,7 +93,6 @@ export default function ArchivePage() {
     try {
       const res = await createFolder({ folderName: name, userId, parentId });
       const { folderId, folderName: createdName } = res.data;
-      // ── 핵심: currentPath 그대로 사용
       const newFolderItem = {
         id: folderId,
         name: createdName,
@@ -179,26 +178,24 @@ export default function ArchivePage() {
     }
   };
 
-  // 검색 (클라이언트)
-const handleSearch = () => {
-  if (!searchText.trim()) {
-    setSearchResults([]);
-    setSearchActive(false);
-    return;
-  }
-  // 현재 디렉토리(displayFiles)에서만 필터링
-  const results = displayFiles.filter(f => f.name.includes(searchText.trim()));
-  setSearchResults(results);
-  setSearchActive(true);
-};
+  // — 검색 (클라이언트)
+  const handleSearch = () => {
+    if (!searchText.trim()) {
+      setSearchResults([]);
+      setSearchActive(false);
+      return;
+    }
+    const results = displayFiles.filter(f => f.name.includes(searchText.trim()));
+    setSearchResults(results);
+    setSearchActive(true);
+  };
 
-// 검색어가 비워지면 검색 패널 닫고 결과 초기화
-useEffect(() => {
-  if (!searchText.trim()) {
-    setSearchActive(false);
-    setSearchResults([]);
-  }
-}, [searchText]);
+  useEffect(() => {
+    if (!searchText.trim()) {
+      setSearchActive(false);
+      setSearchResults([]);
+    }
+  }, [searchText]);
 
   // — 현재 경로에 해당하는 폴더·파일 필터링
   const displayFolders = folders.filter(f =>
@@ -239,7 +236,7 @@ useEffect(() => {
         })}
         {subsI.map(fi => (
           <li key={fi.id} className="file-node" onClick={() => handleFileDoubleClick(fi)}>
-            <img src="/mini_file.png" className="sidebar-icon" alt="file" />
+            <img src="/mini_file.png                        " className="sidebar-icon" alt="file" />
             {fi.name}
           </li>
         ))}
