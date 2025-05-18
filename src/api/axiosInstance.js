@@ -2,13 +2,9 @@
 import axios from 'axios';
 
 const axiosInstance = axios.create({
-<<<<<<< HEAD
-  baseURL: "http://15.165.205.11:8080", // API 주소
-=======
   baseURL: 'http://15.165.205.11:8080', // API 주소
   timeout: 50000,
   withCredentials: true,
->>>>>>> 8ecfb48f70108026030f79a5f33dfc01ddbc9416
 });
 
 // 요청 인터셉터: 요청 로그 출력 + 토큰 헤더 처리
@@ -21,31 +17,23 @@ axiosInstance.interceptors.request.use(
     const token = raw.replace(/^Bearer\s+/i, '').trim();
 
     if (token) {
-<<<<<<< HEAD
       // Ensure token has Bearer prefix
-      config.headers.Authorization = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
-    }
-
-    if (!config.headers['Content-Type'] && !config.headers['content-type']) {
-      config.headers['Content-Type'] = 'application/json';
-    }
-
-    console.log('[Request]', {
-      url: config.url,
-      method: config.method,
-      headers: config.headers,
-      data: config.data,
-    });
-    
-=======
-      config.headers.Authorization = `Bearer ${token}`;
-      console.log('✅ Authorization:', config.headers.Authorization);
+      config.headers.Authorization = token.startsWith('Bearer ')
+        ? token
+        : `Bearer ${token}`;
     } else {
       console.warn('❌ No token found in localStorage');
     }
 
+    // Content-Type이 설정되지 않았다면 JSON으로
+    if (!config.headers['Content-Type'] && !config.headers['content-type']) {
+      config.headers['Content-Type'] = 'application/json';
+    }
+
+    // 로그: 헤더 / 바디 데이터
     console.log('🌐 [Request Headers]', config.headers);
->>>>>>> 8ecfb48f70108026030f79a5f33dfc01ddbc9416
+    console.log('🌐 [Request Data]', config.data);
+
     return config;
   },
   error => {
