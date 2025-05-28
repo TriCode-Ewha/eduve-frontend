@@ -242,3 +242,26 @@
     padding-bottom: 40px !important; /* 하단 여백 */
 }
   
+
+/* 저장 알림 토스트 */
+.save-notification {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.75);
+  color: #fff;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 1rem;
+  z-index: 10000;
+  opacity: 0;
+  animation: fadeInOut 2s forwards;
+}
+
+@keyframes fadeInOut {
+  0%   { opacity: 0; }
+  10%  { opacity: 1; }
+  90%  { opacity: 1; }
+  100% { opacity: 0; }
+}

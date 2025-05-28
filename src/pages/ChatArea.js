@@ -49,6 +49,7 @@ const markdownComponents = {
 const ChatArea = ({ messages, setMessages, username }) => {
   const [input, setInput] = useState(''); // 입력창 상태
   const [liked, setLiked] = useState({}); // 좋아요 상태
+  const [showSaved, setShowSaved] = useState(false); // 알림 표시 여부부
   const [previewPdfUrl, setPreviewPdfUrl] = useState(null);
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef(null);
@@ -114,6 +115,10 @@ const ChatArea = ({ messages, setMessages, username }) => {
         ...prev,
         [messageId]: !isLiked
       }));
+
+      //저장 알림
+      setShowSaved(true);
+      setTimeout(() => setShowSaved(false), 2000);
 
     } catch (err) {
       console.error('좋아요 처리 실패:', err.response?.data || err.message);
@@ -203,6 +208,11 @@ const ChatArea = ({ messages, setMessages, username }) => {
 
   return (
     <>
+      {showSaved &&(
+        <div className="save-notification">
+          저장되었습니다.
+        </div>
+      )}
       <div className="chat-area-inner">
         <SimpleBar
           style={{ 
