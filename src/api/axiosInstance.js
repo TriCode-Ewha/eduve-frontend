@@ -27,9 +27,11 @@ axiosInstance.interceptors.request.use(
       console.warn('❌ No token found in localStorage');
     }
 
-    // Content-Type이 설정되지 않았다면 JSON으로
-    if (!config.headers['Content-Type'] && !config.headers['content-type']) {
-      config.headers['Content-Type'] = 'application/json';
+    // FormData 요청이면 JSON 헤더를 생략
+    if (!(config.data instanceof FormData)) {
+      if (!config.headers['Content-Type'] && !config.headers['content-type']) {
+        config.headers['Content-Type'] = 'application/json';
+      }
     }
 
     // 로그: 헤더 / 바디 데이터
