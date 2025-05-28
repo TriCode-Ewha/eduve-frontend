@@ -8,7 +8,7 @@ import axiosInstance from './axiosInstance';
  */
 export const uploadFile = formData =>
   axiosInstance.post(
-    'http://15.165.205.11:8080/resources/file/text',
+    '/resources/file/text',
     formData,
   );
 
