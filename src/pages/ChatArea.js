@@ -210,7 +210,7 @@ const ChatArea = ({ messages, setMessages, username }) => {
     <>
       {showSaved &&(
         <div className="save-notification">
-          저장되었습니다.
+          저장되었습니다
         </div>
       )}
       <div className="chat-area-inner">
