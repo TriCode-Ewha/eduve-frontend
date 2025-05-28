@@ -2,7 +2,7 @@
 import axios from 'axios';
 
 const axiosInstance = axios.create({
-  baseURL: 'http://15.165.205.11:8080', // API 주소
+  baseURL: process.env.REACT_APP_API_URL,
   timeout: 50000,
   withCredentials: true,
 });
