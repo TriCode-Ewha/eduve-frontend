@@ -33,6 +33,7 @@ export default function ArchivePage() {
   const [files, setFiles] = useState([]);
   const [currentPath, setCurrentPath] = useState([]);
   const [previewFileUrl, setPreviewFileUrl] = useState(null);
+  const [currentUserId, setCurrentUserId] = useState(null);
 
   // — 사이드바 트리 확장 상태
   const [expandedPaths, setExpandedPaths] = useState([]);
@@ -47,6 +48,16 @@ export default function ArchivePage() {
 
   // — 초기 로드: 로컬 스토리지에서 username, folders, files 불러오기
   useEffect(() => {
+    // ① 토큰에서 userId 꺼내서 currentUserId에 저장
+    const token = localStorage.getItem('token');
+    if (token) {
+      try {
+        const { userId } = jwtDecode(token);
+        setCurrentUserId(userId);
+      } catch {
+        console.warn('토큰 디코딩 실패');
+      }
+     }
     const u = localStorage.getItem('username');
     if (u) setUsername(u);
     const sf = localStorage.getItem('folders');
@@ -135,7 +146,7 @@ export default function ArchivePage() {
         name: info.fileName,
         path: [...currentPath],
         fileUrl: info.fileUrl,
-        uploader,
+        uploaderId: info.userId ?? userId,
       };
       const updated = [...files, nf];
       setFiles(updated);
@@ -205,9 +216,11 @@ export default function ArchivePage() {
   const displayFolders = folders.filter(f =>
     JSON.stringify(f.path) === JSON.stringify(currentPath)
   );
-  const displayFiles = files.filter(f =>
-    JSON.stringify(f.path) === JSON.stringify(currentPath)
-  );
+  const displayFiles = files
+     // ② 같은 폴더 경로인지
+     .filter(f => JSON.stringify(f.path) === JSON.stringify(currentPath))
+     // ③ 업로드한 사람과 현재 로그인한 사람이 같은지
+     .filter(f => f.uploaderId === currentUserId);
 
   // — 정렬 적용
   if (sortOrder === 'recent') {
