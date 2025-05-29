@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { uploadFile, renameFile, searchFiles, createFolder } from '../api/fileApi';
 import { v4 as uuidv4 } from 'uuid';
-import { jwtDecode } from 'jwt-decode';
+import jwtDecode from 'jwt-decode';
 import './ArchivePage.css';
 
 export default function ArchivePage() {
@@ -34,6 +34,7 @@ export default function ArchivePage() {
   const [currentPath, setCurrentPath] = useState([]);
   const [previewFileUrl, setPreviewFileUrl] = useState(null);
   const [currentUserId, setCurrentUserId] = useState(null);
+  const [currentUserRole, setCurrentUserRole] = useState(null);
 
   // — 사이드바 트리 확장 상태
   const [expandedPaths, setExpandedPaths] = useState([]);
@@ -216,7 +217,8 @@ export default function ArchivePage() {
   }, [searchText]);
 
   // — 현재 경로에 해당하는 폴더·파일 필터링
-  const displayFolders = folders.filter(…);
+  const displayFolders = folders.filter(f =>
+    JSON.stringify(f.path) === JSON.stringify(currentPath));
   const displayFiles  = files.filter(f => {
     // 1) 같은 경로
     if (JSON.stringify(f.path) !== JSON.stringify(currentPath)) return false;
