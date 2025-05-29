@@ -153,7 +153,6 @@ export default function ArchivePage() {
       };
       const updated = [...files, nf];
       setFiles(updated);
-      localStorage.setItem('files', JSON.stringify(updated));
     } catch (err) {
       console.error('파일 업로드 실패', err);
       alert('파일 업로드에 실패했습니다.');
