@@ -52,8 +52,9 @@ export default function ArchivePage() {
     const token = localStorage.getItem('token');
     if (token) {
       try {
-        const { userId } = jwtDecode(token);
-        setCurrentUserId(userId);
+        const decoded = jwtDecode(token);
+        setCurrentUserId(decoded.userId);
+        setCurrentUserRole(decoded.role);
       } catch {
         console.warn('토큰 디코딩 실패');
       }
@@ -146,7 +147,9 @@ export default function ArchivePage() {
         name: info.fileName,
         path: [...currentPath],
         fileUrl: info.fileUrl,
-        uploaderId: info.userId ?? userId,
+        uploaderId: userId,
+        uploaderName: username,
+        uploaderRole: role,
       };
       const updated = [...files, nf];
       setFiles(updated);
@@ -213,14 +216,20 @@ export default function ArchivePage() {
   }, [searchText]);
 
   // — 현재 경로에 해당하는 폴더·파일 필터링
-  const displayFolders = folders.filter(f =>
-    JSON.stringify(f.path) === JSON.stringify(currentPath)
-  );
-  const displayFiles = files
-     // ② 같은 폴더 경로인지
-     .filter(f => JSON.stringify(f.path) === JSON.stringify(currentPath))
-     // ③ 업로드한 사람과 현재 로그인한 사람이 같은지
-     .filter(f => f.uploaderId === currentUserId);
+  const displayFolders = folders.filter(…);
+  const displayFiles  = files.filter(f => {
+    // 1) 같은 경로
+    if (JSON.stringify(f.path) !== JSON.stringify(currentPath)) return false;
+ 
+    // 2) 선생님이면 **본인이 올린 파일만**, 학생이면 **모든 파일** 보이기
+    if (currentUserRole === 'TEACHER') {
+      return f.uploaderRole === 'TEACHER' && f.uploaderId === currentUserId;
+    } else if (currentUserRole === 'STUDENT') {
+      return true;
+    }
+    // 그 외(관리자 등)는 모두 보기
+    return true;
+  });
 
   // — 정렬 적용
   if (sortOrder === 'recent') {
@@ -335,7 +344,11 @@ export default function ArchivePage() {
 )}
           </div>
 
-          {!searchActive && <div className="folder-tree">{renderTree()}</div>}
+          {!searchActive && (
+            <div className="folder-tree">
+              {renderTree(/* renderTree 내부에서도 동일하게 displayFiles 조건 고려 */)}
+        </div>
+  )}
         </aside>
 
         {/* 메인 */}
