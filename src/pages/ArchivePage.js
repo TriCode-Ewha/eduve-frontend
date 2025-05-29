@@ -61,7 +61,6 @@ export default function ArchivePage() {
         console.warn('토큰 디코딩 실패');
       }
      }
-    if (u) setUsername(u);
     const sf = localStorage.getItem('folders');
     if (sf) {
       try { setFolders(JSON.parse(sf)); }
@@ -150,7 +149,7 @@ export default function ArchivePage() {
         fileUrl: info.fileUrl,
         uploaderId: userId,
         uploaderRole: currentUserRole,
-        uploaderName: decoded.username || username,
+        uploaderName: uploader,
       };
       const updated = [...files, nf];
       setFiles(updated);
