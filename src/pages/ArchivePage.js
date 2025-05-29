@@ -433,7 +433,7 @@ export default function ArchivePage() {
                 <img src="/pdf-thumbnail.png" className="file-thumbnail" alt="file" />
                 <div className="file-name">{file.name}</div>
                 <div className={`file-uploader ${file.uploader === username ? 'teacher' : 'student'}`}>
-                  {file.uploader}선생님 업로드
+                  {file.uploader}님 업로드
                   </div>
               </div>
             ))}
