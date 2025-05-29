@@ -112,7 +112,6 @@ export default function ArchivePage() {
       };
       const updated = [...folders, newFolderItem];
       setFolders(updated);
-      localStorage.setItem('folders', JSON.stringify(updated));
       setNewFolderName('');
       setIsAddingFolder(false);
     } catch (err) {
