@@ -7,11 +7,15 @@ import axiosInstance from './axiosInstance';
  * @param {FormData} formData
  */
 export const uploadFile = formData =>
+  // 파일만 직접 IP 서버로 요청
   axiosInstance.post(
     '/resources/file/text',
     formData,
+    {
+      // multipart/form-data 헤더는 인터셉터에서 건드리지 않도록
+      headers: { 'Content-Type': 'multipart/form-data' }
+    }
   );
-
 /**
  * 파일 조회
  * @param {string|number} fileId
