@@ -150,7 +150,7 @@ export default function ArchivePage() {
         fileUrl: info.fileUrl,
         uploaderId: userId,
         uploaderName: username,
-        uploaderRole: role,
+        uploaderRole: currentUserRole,
       };
       const updated = [...files, nf];
       setFiles(updated);
