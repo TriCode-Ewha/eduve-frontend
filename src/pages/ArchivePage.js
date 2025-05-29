@@ -113,9 +113,12 @@ export default function ArchivePage() {
   const handleFileSelect = async e => {
     const file = e.target.files[0];
     if (!file) return;
-    let userId;
+    let userId, uploader;
     try {
-      userId = jwtDecode(localStorage.getItem('token')).userId;
+      const token = localStorage.getItem('token');
+      const decoded = jwtDecode(token);
+      userId = decoded.userId;
+      uploader = decoded.username || decoded.email || 'Unknown';
     } catch {
       return alert('토큰이 유효하지 않습니다.');
     }
@@ -132,6 +135,7 @@ export default function ArchivePage() {
         name: info.fileName,
         path: [...currentPath],
         fileUrl: info.fileUrl,
+        uploader,
       };
       const updated = [...files, nf];
       setFiles(updated);
@@ -428,6 +432,9 @@ export default function ArchivePage() {
               >
                 <img src="/pdf-thumbnail.png" className="file-thumbnail" alt="file" />
                 <div className="file-name">{file.name}</div>
+                <div className={`file-uploader ${file.uploader === username ? 'teacher' : 'student'}`}>
+                  {file.uploader}선생님 업로드
+                  </div>
               </div>
             ))}
           </div>

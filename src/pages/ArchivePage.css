@@ -5,6 +5,16 @@
    전체 스타일: 네비게이션, 사이드바, 메인, add/정렬 버튼, 폴더/파일 리스트, 모달 등
 ──────────────────────────────────────────────────────────────────────────── */
 
+/* ─── CSS 변수: 레이아웃 높이 계산용 ─── */
+:root {
+  --header-height:      60px;  /* navbar */
+  --body-padding-left:  30px;  /* .archive-body */
+  --body-padding-bottom:30px;
+  --path-border:        1px;   /* .path-display border-bottom */
+  --sidebar-width:      350px;
+  --gap:                20px;
+}
+
 /* ─── 전체 컨테이너 & 네비게이션 바 ─── */
 .archive-container {
   background-color: #fdf8f2;
@@ -21,7 +31,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  height: 60px;
+  height: var(--header-height);
   padding: 15px 50px;
   background-color: #fdf8f2;
 }
@@ -245,7 +255,7 @@
   display: flex;
   gap: 30px 80px;
   flex-wrap: wrap;
-  margin-top: 20px;
+  margin-top: 15px;
   padding-left: 40px;
 }
 .folder-box,
@@ -255,6 +265,12 @@
   align-items: center;
   cursor: pointer;
   margin-top: 20px;
+}
+
+.file-uploader{
+  margin-top: 2px;
+  font-size: 0.75rem;
+  color: #1B512D;
 }
 .folder-icon {
   width: 100px;
@@ -320,14 +336,24 @@
   position: fixed;
   inset: 0;
   background: rgba(0,0,0,0.2);
+  display: flex;
+  justify-content: flex-start;
+  align-items: flex-start;
+  padding:
+    calc(var(--header-height) + var(--path-border) + var(--gap))
+    var(--gap)
+    calc(var(--body-padding-bottom) + var(--gap))
+    calc(var(--sidebar-width) + var(--body-padding-left) + var(--gap));
+  box-sizing: border-box;
   z-index: 1000;
 }
 .modal-content {
   position: fixed;
-  top: 10%;
-  left: 10%;
-  right: 10%;
-  bottom: 10%;
+  top:    calc(var(--header-height)         + var(--path-border)    + var(--gap));
+  bottom: calc(var(--body-padding-bottom)  + var(--gap));
+  left:   calc(var(--sidebar-width)        + var(--body-padding-left) + var(--gap));
+  right:  calc(var(--sidebar-width)        + var(--body-padding-left) + var(--gap)); /* ← 여기를 동일하게! */
+  
   background: #fff;
   border-radius: 10px;
   box-shadow: 0 8px 24px rgba(0,0,0,0.2);
