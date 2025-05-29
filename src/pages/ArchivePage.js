@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { uploadFile, renameFile, searchFiles, createFolder } from '../api/fileApi';
 import { v4 as uuidv4 } from 'uuid';
-import jwtDecode from 'jwt-decode';
+import { jwtDecode } from 'jwt-decode';
 import './ArchivePage.css';
 
 export default function ArchivePage() {
