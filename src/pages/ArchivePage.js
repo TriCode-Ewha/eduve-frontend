@@ -56,11 +56,11 @@ export default function ArchivePage() {
         const decoded = jwtDecode(token);
         setCurrentUserId(decoded.userId);
         setCurrentUserRole(decoded.role);
+        setUsername(decoded.username || localStorage.getItem('username') || '');
       } catch {
         console.warn('토큰 디코딩 실패');
       }
      }
-    const u = localStorage.getItem('username');
     if (u) setUsername(u);
     const sf = localStorage.getItem('folders');
     if (sf) {
@@ -149,8 +149,8 @@ export default function ArchivePage() {
         path: [...currentPath],
         fileUrl: info.fileUrl,
         uploaderId: userId,
-        uploaderName: username,
         uploaderRole: currentUserRole,
+        uploaderName: decoded.username || username,
       };
       const updated = [...files, nf];
       setFiles(updated);
@@ -460,8 +460,8 @@ export default function ArchivePage() {
               >
                 <img src="/pdf-thumbnail.png" className="file-thumbnail" alt="file" />
                 <div className="file-name">{file.name}</div>
-                <div className={`file-uploader ${file.uploader === username ? 'teacher' : 'student'}`}>
-                  {file.uploader}님 업로드
+                <div className={`file-uploader`}>
+                  {file.uploaderName}님 업로드
                   </div>
               </div>
             ))}
