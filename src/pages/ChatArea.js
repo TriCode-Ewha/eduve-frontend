@@ -8,6 +8,7 @@ import './ChatArea.css';
 
 import SimpleBar from 'simplebar-react';
 import 'simplebar-react/dist/simplebar.min.css';
+import TooltipPortal from '../TooltipPortal';
 
 // 마크다운 커스텀 컴포넌트
 const markdownComponents = {
@@ -53,6 +54,13 @@ const ChatArea = ({ messages, setMessages, username }) => {
   const [previewPdfUrl, setPreviewPdfUrl] = useState(null);
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef(null);
+  const [graphMode, setGraphMode] = useState(false); // 그래프 모드 여부
+  const graphBtnRef = useRef(null);
+  const [hoverGraphBtn, setHoverGraphBtn] = useState(false);
+
+  const toggleGraphMode = () => {
+    setGraphMode(prev => !prev);
+  };
 
   // 초기 메시지 설정
   useEffect(() => {
@@ -157,8 +165,10 @@ const ChatArea = ({ messages, setMessages, username }) => {
 
     // 백엔드 요청
     try {
+      const graphParam = graphMode ? 1 : 0;
+      
       const res = await axiosInstance.post(
-        `/chat/start/${userId}`, 
+        `/chat/start/${userId}?graph=${graphParam}`, // ← 쿼리 파라미터 추가됨
         { question },
         {
           headers: {
@@ -274,12 +284,30 @@ const ChatArea = ({ messages, setMessages, username }) => {
         <div className="chat-input-wrapper">
           <div className="chat-input-separator" />
           <div className="chat-input-box">
+    
+            <div className="tooltip-wrapper">
+              <button
+                ref={graphBtnRef}
+                className={`graph-toggle-btn ${graphMode ? 'active' : ''}`}
+                onClick={toggleGraphMode}
+                onMouseEnter={() => setHoverGraphBtn(true)}
+                onMouseLeave={() => setHoverGraphBtn(false)}
+              >
+                📈
+              </button>
+            </div>
+
+            <TooltipPortal targetRef={graphBtnRef} visible={hoverGraphBtn}>
+              그래프/표를 분석하고 싶으면 여기를 누르세요!
+            </TooltipPortal>
+            
+
             <input
               className="chat-input"
               value={input}
               onChange={e => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="질문을 입력하세요..."
+              placeholder={graphMode ? "그래프/표 인식 모드로 질문 중..." : "질문을 입력하세요..."}
             />
             <button className="chat-send-btn" onClick={handleSend}>
               전송

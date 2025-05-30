@@ -259,6 +259,74 @@
   animation: fadeInOut 2s forwards;
 }
 
+.graph-toggle-btn {
+    background-color: #ffffff;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    color: #333;
+    transition: background-color 0.2s ease;
+}
+  
+.graph-toggle-btn:hover {
+    background-color: #f0f0f0;
+}
+  
+.graph-toggle-btn.active {
+    background-color: #F8E1DE;
+    border-color: #f9d1cc;
+    color: #1b512d;
+}
+
+.tooltip-wrapper {
+    position: relative;
+    display: inline-block;
+  }
+  
+  /* 툴팁 텍스트 기본 상태 - 숨김 */
+.tooltip-text {
+    visibility: hidden;
+    width: 220px;
+    background-color: rgba(119, 119, 119, 0.75);
+    color: #fff;
+    text-align: center;
+    padding: 8px 12px;
+    border-radius: 6px;
+  
+    position: absolute;
+    bottom: 140%; /* 버튼 위에 충분히 띄우기 */
+    left: 50%;
+    transform: translateX(-50%);
+    
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none; /* 툴팁에 마우스 이벤트 무시 */
+    z-index: 100; /* 위에 뜨도록 */
+    font-size: 0.65rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+  
+  /* 화살표 삼각형 (아래쪽 화살표) */
+.tooltip-text::after {
+    content: "";
+    position: absolute;
+    top: 100%; /* 툴팁 아래쪽 끝 */
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 6px;
+    border-style: solid;
+    border-color: rgba(119, 119, 119, 0.75) transparent transparent transparent;
+}
+  
+  /* 툴팁 보이기 */
+.tooltip-wrapper:hover .tooltip-text {
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
+}
+
 @keyframes fadeInOut {
   0%   { opacity: 0; }
   10%  { opacity: 1; }
