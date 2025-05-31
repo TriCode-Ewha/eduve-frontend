@@ -225,15 +225,15 @@ export default function ArchivePage() {
     }
 
     let candidates;
-    if (currentUserRole === 'ROLE_TEACHER') {
+    if (currentUserRole === 'ROLE_Teacher') {
       // TEACHER라면 “모든 선생님 파일 + (본인인 학생 파일은 없음)”
       // 사실 검색 시에도, teacher는 학생 파일을 아예 검색결과에서 제거하기 위해 아래와 같이 처리할 수 있습니다.
-      candidates = files.filter(f => f.uploaderRole === 'ROLE_TEACHER');
-    } else if (currentUserRole === 'ROLE_STUDENT') {
+      candidates = files.filter(f => f.uploaderRole === 'ROLE_Teacher');
+    } else if (currentUserRole === 'ROLE_Student') {
       // STUDENT라면 “선생님 파일 전부 + 내가 올린 학생 파일”
       candidates = files.filter(f => {
-        if (f.uploaderRole === 'ROLE_TEACHER') return true;
-        if (f.uploaderRole === 'ROLE_STUDENT' && f.uploaderId === currentUserId) return true;
+        if (f.uploaderRole === 'ROLE_Teacher') return true;
+        if (f.uploaderRole === 'ROLE_Student' && f.uploaderId === currentUserId) return true;
         return false;
       });
     } else {
@@ -268,13 +268,13 @@ export default function ArchivePage() {
     }
 
     // 2) “선생님 파일(ROLE_TEACHER)”은 모두에게 공개
-    if (f.uploaderRole === 'ROLE_TEACHER') {
+    if (f.uploaderRole === 'ROLE_Teacher') {
       return true;
     }
 
     // 3) “학생 파일(ROLE_STUDENT)”은 ‘학생 본인’에게만 공개
-    if (f.uploaderRole === 'ROLE_STUDENT') {
-      return currentUserRole === 'ROLE_STUDENT' && f.uploaderId === currentUserId;
+    if (f.uploaderRole === 'ROLE_Student') {
+      return currentUserRole === 'ROLE_Student' && f.uploaderId === currentUserId;
     }
 
     // 4) (그 외 ADMIN 등은 모두에게 공개)
