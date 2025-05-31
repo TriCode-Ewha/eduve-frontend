@@ -66,22 +66,11 @@ export default function ArchivePage() {
       try { setFolders(JSON.parse(sf)); }
       catch { localStorage.removeItem('folders'); }
     }
-    async function loadFilesFromServer() {
-      try {
-        // 실제 백엔드 API 엔드포인트 경로로 변경하세요.
-        const response = await fetch('https://api.eduve.r-e.kr/resources/file/list', {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-        });
-        if (!response.ok) throw new Error('파일 목록 로드 실패');
-        const data = await response.json();
-        setFiles(data);
-        // (원하면) localStorage에도 저장:
-        // localStorage.setItem('files', JSON.stringify(data));
-      } catch (err) {
-        console.error('파일 목록 로드 중 에러', err);
-      }
+    const sF = localStorage.getItem('files');
+    if (sF) {
+      try { setFiles(JSON.parse(sF)); }
+      catch { localStorage.removeItem('files'); }
     }
-    loadFilesFromServer();
   }, []);
 
   // — 로그아웃
@@ -163,6 +152,8 @@ export default function ArchivePage() {
       };
       const updated = [...files, nf];
       setFiles(updated);
+
+      localStorage.setItem('files', JSON.stringify(updated));
     } catch (err) {
       console.error('파일 업로드 실패', err);
       alert('파일 업로드에 실패했습니다.');
@@ -482,7 +473,7 @@ export default function ArchivePage() {
               >
                 <img src="/pdf-thumbnail.png" className="file-thumbnail" alt="file" />
                 <div className="file-name">{file.name}</div>
-                <div className={`file-uploader`}>
+                <div className={file-uploader}>
                   {file.uploaderName}님 업로드
                   </div>
               </div>
