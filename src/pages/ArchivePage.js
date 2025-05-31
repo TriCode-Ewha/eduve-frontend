@@ -201,7 +201,19 @@ export default function ArchivePage() {
       setSearchActive(false);
       return;
     }
-    const results = displayFiles.filter(f => f.name.includes(searchText.trim()));
+    let candidates;
+    if (currentUserRole === 'TEACHER') {
+      // TEACHER라면 본인이 올린 파일만
+      candidates = files.filter(f => f.uploaderRole === 'TEACHER' && f.uploaderId === currentUserId);
+    } else {
+      // STUDENT나 그 외(ADMIN 등)는 모든 파일 검색
+      candidates = files;
+    }
+
+    // 그 위에서 검색어가 포함된 파일만 다시 필터링
+    const results = candidates.filter(
+      f => typeof f.name === 'string' && f.name.includes(searchText.trim())
+    );
     setSearchResults(results);
     setSearchActive(true);
   };
@@ -316,7 +328,9 @@ export default function ArchivePage() {
               onChange={e => setSearchText(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleSearch()}
             />
-            <button className="search-btn" onMouseDown={handleSearch} aria-label="검색" />
+            <button className="search-btn" onMouseDown={handleSearch} aria-label="검색" >
+             <img src="/search-button.png" alt="돋보기" />
+           </button>
 
             {searchActive && (
   <div className="search-panel">
@@ -466,10 +480,10 @@ export default function ArchivePage() {
 
           {/* PDF 미리보기 모달 */}
           {previewFileUrl && (
-            <div className="modal-overlay" onClick={closePreview}>
-              <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <div className="archive-modal-overlay" onClick={closePreview}>
+              <div className="archive-modal-content" onClick={e => e.stopPropagation()}>
                 <iframe src={previewFileUrl} title="PDF Preview" style={{ border: 'none' }} />
-                <button className="close-btn" onClick={closePreview}>닫기</button>
+                <button className="archive-close-btn" onClick={closePreview}>닫기</button>
               </div>
             </div>
           )}
