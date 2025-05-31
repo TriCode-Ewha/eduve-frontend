@@ -168,6 +168,12 @@ export default function ArchivePage() {
         uploaderName: uploader,
       };
 
+      // ① React state에 추가
+      const updated = [...files, nf];
+      setFiles(updated);
+
+      // ② localStorage에 저장
+      localStorage.setItem('files', JSON.stringify(updated));
     } catch (err) {
       console.error('파일 업로드 실패', err);
       alert('파일 업로드에 실패했습니다.');
