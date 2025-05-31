@@ -24,7 +24,7 @@ export default function ArchivePage() {
   const [newFolderName, setNewFolderName] = useState('');
   const [sortMenuOpen,  setSortMenuOpen ] = useState(false);
   const [sortOrder,     setSortOrder    ] = useState('past'); // past, recent, alpha 등
-
+  const [menuOpen, setMenuOpen] = useState(false);
   const [folders,       setFolders      ] = useState([]);
   const [files,         setFiles        ] = useState([]);
   const [currentPath,   setCurrentPath  ] = useState([]);    // 문자열 배열(폴더 트리 경로)
