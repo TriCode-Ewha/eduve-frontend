@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { uploadFile, renameFile, searchFiles, createFolder } from '../api/fileApi';
+import { uploadFile, renameFile, createFolder } from '../api/fileApi';
 import { v4 as uuidv4 } from 'uuid';
 import { jwtDecode } from 'jwt-decode';
 import './ArchivePage.css';
@@ -28,11 +28,13 @@ export default function ArchivePage() {
   const [sortMenuOpen, setSortMenuOpen] = useState(false);
   const [sortOrder, setSortOrder] = useState('past');
 
-  // — 자료(폴더/파일)
+  // — 자료(폴더/파일) 상태
   const [folders, setFolders] = useState([]);
   const [files, setFiles] = useState([]);
   const [currentPath, setCurrentPath] = useState([]);
   const [previewFileUrl, setPreviewFileUrl] = useState(null);
+
+  // — 현재 로그인된 user 정보 (userId, role)
   const [currentUserId, setCurrentUserId] = useState(null);
   const [currentUserRole, setCurrentUserRole] = useState(null);
 
@@ -47,7 +49,7 @@ export default function ArchivePage() {
   };
   const isExpanded = pathKey => expandedPaths.includes(pathKey);
 
-  // — 초기 로드: 토큰에서 userId/role 꺼내기 + localStorage에서 folders/files 불러오기
+  // — 컴포넌트 마운트 시: localStorage → state로 불러오기 + 토큰 디코딩
   useEffect(() => {
     // ① 토큰에서 userId, role, username 꺼내기
     const token = localStorage.getItem('token');
@@ -56,14 +58,13 @@ export default function ArchivePage() {
         const decoded = jwtDecode(token);
         setCurrentUserId(decoded.userId);
         setCurrentUserRole(decoded.role);
-        // 서버로부터 username을 token에 담아주었다면 decoded.username을, 아니면 localStorage에 있던 username을 써도 됩니다.
         setUsername(decoded.username || localStorage.getItem('username') || '');
       } catch {
         console.warn('토큰 디코딩 실패');
       }
     }
 
-    // ② localStorage에서 folders/load
+    // ② localStorage에서 folders load
     const sf = localStorage.getItem('folders');
     if (sf) {
       try {
@@ -73,7 +74,7 @@ export default function ArchivePage() {
       }
     }
 
-    // ③ localStorage에서 files/load
+    // ③ localStorage에서 files load
     const sF = localStorage.getItem('files');
     if (sF) {
       try {
@@ -90,7 +91,7 @@ export default function ArchivePage() {
     navigate('/');
   };
 
-  // — 폴더 클릭: breadcrumb, tree 이동
+  // — 폴더 클릭: breadcrumb, 트리 이동
   const handleFolderClick = name => setCurrentPath(p => [...p, name]);
   const handlePathClick = idx => setCurrentPath(p => p.slice(0, idx + 1));
 
@@ -123,7 +124,6 @@ export default function ArchivePage() {
       };
       const updated = [...folders, newFolderItem];
       setFolders(updated);
-      // (원하는 경우) localStorage에도 저장 가능
       localStorage.setItem('folders', JSON.stringify(updated));
 
       setNewFolderName('');
@@ -172,7 +172,7 @@ export default function ArchivePage() {
       const updated = [...files, nf];
       setFiles(updated);
 
-      // ② localStorage에 저장 (그래야 학생 계정으로 로그인해도 선생님이 올린 파일이 남아 있음)
+      // ② localStorage에 저장
       localStorage.setItem('files', JSON.stringify(updated));
     } catch (err) {
       console.error('파일 업로드 실패', err);
@@ -226,14 +226,22 @@ export default function ArchivePage() {
 
     let candidates;
     if (currentUserRole === 'TEACHER') {
-      // TEACHER라면 “본인이 올린 파일만”
-      candidates = files.filter(f => f.uploaderRole === 'TEACHER' && f.uploaderId === currentUserId);
+      // TEACHER라면 “모든 선생님 파일 + (본인인 학생 파일은 없음)”
+      // 사실 검색 시에도, teacher는 학생 파일을 아예 검색결과에서 제거하기 위해 아래와 같이 처리할 수 있습니다.
+      candidates = files.filter(f => f.uploaderRole === 'TEACHER');
+    } else if (currentUserRole === 'STUDENT') {
+      // STUDENT라면 “선생님 파일 전부 + 내가 올린 학생 파일”
+      candidates = files.filter(f => {
+        if (f.uploaderRole === 'TEACHER') return true;
+        if (f.uploaderRole === 'STUDENT' && f.uploaderId === currentUserId) return true;
+        return false;
+      });
     } else {
-      // STUDENT나 기타(ADMIN 등)는 “모든 파일” 중에서
+      // ADMIN 등 기타 역할은 “전체 공개”
       candidates = files;
     }
 
-    // 그중에서 이름에 검색어가 포함된 파일만 골라낸다
+    // 그 위에서 검색어 포함 여부 체크
     const results = candidates.filter(
       f => typeof f.name === 'string' && f.name.includes(searchText.trim())
     );
@@ -248,26 +256,32 @@ export default function ArchivePage() {
     }
   }, [searchText]);
 
-  // — 현재 경로에 해당하는 폴더·파일 필터링
+  // — 현재 경로에 해당하는 “화면에 뿌릴 파일” 필터링
   const displayFolders = folders.filter(
     f => JSON.stringify(f.path) === JSON.stringify(currentPath)
   );
 
   const displayFiles = files.filter(f => {
-    // 1) 같은 경로
-    if (JSON.stringify(f.path) !== JSON.stringify(currentPath)) return false;
+    // 1) 경로(path) 일치 여부
+    if (JSON.stringify(f.path) !== JSON.stringify(currentPath)) {
+      return false;
+    }
 
-    // 2) 선생님이면 “본인이 올린 파일만”, 학생이면 “모든 파일”
-    if (currentUserRole === 'TEACHER') {
-      return f.uploaderRole === 'TEACHER' && f.uploaderId === currentUserId;
-    } else if (currentUserRole === 'STUDENT') {
+    // 2) “선생님 파일(ROLE_TEACHER)”은 모두에게 공개
+    if (f.uploaderRole === 'TEACHER') {
       return true;
     }
-    // 그 외(ADMIN 등)도 모두 보기
+
+    // 3) “학생 파일(ROLE_STUDENT)”은 ‘학생 본인’에게만 공개
+    if (f.uploaderRole === 'STUDENT') {
+      return currentUserRole === 'STUDENT' && f.uploaderId === currentUserId;
+    }
+
+    // 4) (그 외 ADMIN 등은 모두에게 공개)
     return true;
   });
 
-  // — 정렬 적용
+  // — 정렬 적용 (최근순, 가나다순 등)
   if (sortOrder === 'recent') {
     displayFolders.reverse();
     displayFiles.reverse();
@@ -308,7 +322,7 @@ export default function ArchivePage() {
 
   return (
     <div className="archive-container">
-      {/* 네비게이션 */}
+      {/* 네비게이션 바 */}
       <nav className="navbar">
         <h1 className="logo" onClick={() => navigate('/')}>
           <span className="edu">Edu</span><span className="ve">'ve</span><span className="com">.com</span>
@@ -338,7 +352,7 @@ export default function ArchivePage() {
         </div>
       </nav>
 
-      {/* 본문 */}
+      {/* 본문: 사이드바 + 메인 */}
       <div className="archive-body">
         {/* 사이드바 */}
         <aside className="sidebar">
@@ -376,7 +390,6 @@ export default function ArchivePage() {
               </div>
             )}
           </div>
-
           {!searchActive && <div className="folder-tree">{renderTree()}</div>}
         </aside>
 
@@ -397,7 +410,7 @@ export default function ArchivePage() {
                   >
                     {' / '}{p}
                   </span>
-                ))}
+                ))}  
               </>
             )}
             <button className="sort-toggle" onClick={() => setSortMenuOpen(o => !o)}>정렬 ▼</button>
@@ -416,7 +429,7 @@ export default function ArchivePage() {
             )}
           </div>
 
-          {/* 폴더 리스트 */}
+          {/* 폴더 리스트 (아직 레벨 0일 때) */}
           <div className="folder-list">
             <div
               className="folder-box add-placeholder"
@@ -449,10 +462,7 @@ export default function ArchivePage() {
                 key={f.id}
                 className="folder-box"
                 onClick={() => handleFolderClick(f.name)}
-                onContextMenu={e => {
-                  e.preventDefault();
-                  handleDeleteFolder(f.id);
-                }}
+                onContextMenu={e => { e.preventDefault(); handleDeleteFolder(f.id); }}
               >
                 <img src="/folder.png" className="folder-icon" alt="folder" />
                 <div className="folder-name">{f.name}</div>
@@ -512,9 +522,7 @@ export default function ArchivePage() {
             <div className="archive-modal-overlay" onClick={closePreview}>
               <div className="archive-modal-content" onClick={e => e.stopPropagation()}>
                 <iframe src={previewFileUrl} title="PDF Preview" style={{ border: 'none' }} />
-                <button className="archive-close-btn" onClick={closePreview}>
-                  닫기
-                </button>
+                <button className="archive-close-btn" onClick={closePreview}>닫기</button>
               </div>
             </div>
           )}
