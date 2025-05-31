@@ -278,7 +278,7 @@ export default function ArchivePage() {
     }
 
     // 4) (그 외 ADMIN 등은 모두에게 공개)
-    return true;
+    return false;
   });
 
   // — 정렬 적용 (최근순, 가나다순 등)

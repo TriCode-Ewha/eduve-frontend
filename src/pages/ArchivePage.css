@@ -392,6 +392,7 @@
   text-overflow: ellipsis;
   /* 위쪽 여백 제거 */
   margin-top: 0;
+  align-items: center;
 }
 
 /* ─── 파일 업로더 표시 ─── */
@@ -400,6 +401,7 @@
   font-size: 0.75rem;
   color: #1B512D;
   max-width: 120px;
+  align-items: center;
 }
 
 /* ─── PDF 미리보기 모달 ─── */
