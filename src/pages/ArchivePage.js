@@ -66,11 +66,22 @@ export default function ArchivePage() {
       try { setFolders(JSON.parse(sf)); }
       catch { localStorage.removeItem('folders'); }
     }
-    const sF = localStorage.getItem('files');
-    if (sF) {
-      try { setFiles(JSON.parse(sF)); }
-      catch { localStorage.removeItem('files'); }
+    useEffect(() => {
+  // 기존: localStorage.getItem('files') → setFiles(JSON.parse(…))
+  // 수정: 서버에서 모든 파일 목록을 받아와서 setFiles(…) 한다
+  async function loadFilesFromServer() {
+    try {
+      const res = await fetch('/api/resources/file/all', {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      const json = await res.json();
+      setFiles(json);  // 서버에서 보내 준 전체 파일 배열
+    } catch (e) {
+      console.error('파일 목록 로드 실패', e);
     }
+  }
+  loadFilesFromServer();
+}, []);
   }, []);
 
   // — 로그아웃
