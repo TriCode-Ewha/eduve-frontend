@@ -164,16 +164,10 @@ export default function ArchivePage() {
         path: [...currentPath],
         fileUrl: info.fileUrl,
         uploaderId: userId,
-        uploaderRole: (currentUserRole || '').toLocaleLowerCase(),
+        uploaderRole: currentUserRole,
         uploaderName: uploader,
       };
 
-      // ① React state에 추가
-      const updated = [...files, nf];
-      setFiles(updated);
-
-      // ② localStorage에 저장
-      localStorage.setItem('files', JSON.stringify(updated));
     } catch (err) {
       console.error('파일 업로드 실패', err);
       alert('파일 업로드에 실패했습니다.');
@@ -267,21 +261,18 @@ export default function ArchivePage() {
       return false;
     }
 
-    const urole = String(f.uploaderRole || '').toLowerCase();
-    const myRole = String(currentUserRole || '').toLowerCase();
-
     // 2) “선생님 파일(ROLE_TEACHER)”은 모두에게 공개
-    if (urole === 'role_teacher') {
+    if (f.uploaderRole === 'ROLE_Teacher') {
       return true;
     }
 
     // 3) “학생 파일(ROLE_STUDENT)”은 ‘학생 본인’에게만 공개
-    if (urole === 'role_student') {
-      return myrole === 'role_student' && f.uploaderId === currentUserId;
+    if (f.uploaderRole === 'ROLE_Student') {
+      return currentUserRole === 'ROLE_Student' && f.uploaderId === currentUserId;
     }
 
     // 4) (그 외 ADMIN 등은 모두에게 공개)
-    return false;
+    return true;
   });
 
   // — 정렬 적용 (최근순, 가나다순 등)
