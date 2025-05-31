@@ -47,29 +47,40 @@ export default function ArchivePage() {
   };
   const isExpanded = pathKey => expandedPaths.includes(pathKey);
 
-  // — 초기 로드: 로컬 스토리지에서 username, folders, files 불러오기
+  // — 초기 로드: 토큰에서 userId/role 꺼내기 + localStorage에서 folders/files 불러오기
   useEffect(() => {
-    // ① 토큰에서 userId 꺼내서 currentUserId에 저장
+    // ① 토큰에서 userId, role, username 꺼내기
     const token = localStorage.getItem('token');
     if (token) {
       try {
         const decoded = jwtDecode(token);
         setCurrentUserId(decoded.userId);
         setCurrentUserRole(decoded.role);
+        // 서버로부터 username을 token에 담아주었다면 decoded.username을, 아니면 localStorage에 있던 username을 써도 됩니다.
         setUsername(decoded.username || localStorage.getItem('username') || '');
       } catch {
         console.warn('토큰 디코딩 실패');
       }
-     }
+    }
+
+    // ② localStorage에서 folders/load
     const sf = localStorage.getItem('folders');
     if (sf) {
-      try { setFolders(JSON.parse(sf)); }
-      catch { localStorage.removeItem('folders'); }
+      try {
+        setFolders(JSON.parse(sf));
+      } catch {
+        localStorage.removeItem('folders');
+      }
     }
+
+    // ③ localStorage에서 files/load
     const sF = localStorage.getItem('files');
     if (sF) {
-      try { setFiles(JSON.parse(sF)); }
-      catch { localStorage.removeItem('files'); }
+      try {
+        setFiles(JSON.parse(sF));
+      } catch {
+        localStorage.removeItem('files');
+      }
     }
   }, []);
 
@@ -81,7 +92,7 @@ export default function ArchivePage() {
 
   // — 폴더 클릭: breadcrumb, tree 이동
   const handleFolderClick = name => setCurrentPath(p => [...p, name]);
-  const handlePathClick   = idx  => setCurrentPath(p => p.slice(0, idx + 1));
+  const handlePathClick = idx => setCurrentPath(p => p.slice(0, idx + 1));
 
   // — Add 메뉴 토글
   const handleAddFolderStart = () => {
@@ -112,6 +123,9 @@ export default function ArchivePage() {
       };
       const updated = [...folders, newFolderItem];
       setFolders(updated);
+      // (원하는 경우) localStorage에도 저장 가능
+      localStorage.setItem('folders', JSON.stringify(updated));
+
       setNewFolderName('');
       setIsAddingFolder(false);
     } catch (err) {
@@ -133,14 +147,17 @@ export default function ArchivePage() {
     } catch {
       return alert('토큰이 유효하지 않습니다.');
     }
+
     const fd = new FormData();
     fd.append('file', file);
     fd.append('userId', userId);
     fd.append('folderId', 1);
+
     try {
       const res = await uploadFile(fd);
       const infoArr = res.data.fileInfo;
       const info = Array.isArray(infoArr) ? infoArr[0] : infoArr;
+
       const nf = {
         id: uuidv4(),
         name: info.fileName,
@@ -150,9 +167,12 @@ export default function ArchivePage() {
         uploaderRole: currentUserRole,
         uploaderName: uploader,
       };
+
+      // ① React state에 추가
       const updated = [...files, nf];
       setFiles(updated);
 
+      // ② localStorage에 저장 (그래야 학생 계정으로 로그인해도 선생님이 올린 파일이 남아 있음)
       localStorage.setItem('files', JSON.stringify(updated));
     } catch (err) {
       console.error('파일 업로드 실패', err);
@@ -185,9 +205,9 @@ export default function ArchivePage() {
     if (!newName || newName === file.name) return;
     try {
       const res = await renameFile(file.id, newName);
-      const updated = res.data;
+      const updatedFileInfo = res.data;
       const next = files.map(f =>
-        f.id === updated.fileId ? { ...f, name: updated.fileName } : f
+        f.id === updatedFileInfo.fileId ? { ...f, name: updatedFileInfo.fileName } : f
       );
       setFiles(next);
       localStorage.setItem('files', JSON.stringify(next));
@@ -203,16 +223,17 @@ export default function ArchivePage() {
       setSearchActive(false);
       return;
     }
+
     let candidates;
     if (currentUserRole === 'TEACHER') {
-      // TEACHER라면 본인이 올린 파일만
+      // TEACHER라면 “본인이 올린 파일만”
       candidates = files.filter(f => f.uploaderRole === 'TEACHER' && f.uploaderId === currentUserId);
     } else {
-      // STUDENT나 그 외(ADMIN 등)는 모든 파일 검색
+      // STUDENT나 기타(ADMIN 등)는 “모든 파일” 중에서
       candidates = files;
     }
 
-    // 그 위에서 검색어가 포함된 파일만 다시 필터링
+    // 그중에서 이름에 검색어가 포함된 파일만 골라낸다
     const results = candidates.filter(
       f => typeof f.name === 'string' && f.name.includes(searchText.trim())
     );
@@ -228,19 +249,21 @@ export default function ArchivePage() {
   }, [searchText]);
 
   // — 현재 경로에 해당하는 폴더·파일 필터링
-  const displayFolders = folders.filter(f =>
-    JSON.stringify(f.path) === JSON.stringify(currentPath));
-  const displayFiles  = files.filter(f => {
+  const displayFolders = folders.filter(
+    f => JSON.stringify(f.path) === JSON.stringify(currentPath)
+  );
+
+  const displayFiles = files.filter(f => {
     // 1) 같은 경로
     if (JSON.stringify(f.path) !== JSON.stringify(currentPath)) return false;
- 
-    // 2) 선생님이면 **본인이 올린 파일만**, 학생이면 **모든 파일** 보이기
+
+    // 2) 선생님이면 “본인이 올린 파일만”, 학생이면 “모든 파일”
     if (currentUserRole === 'TEACHER') {
       return f.uploaderRole === 'TEACHER' && f.uploaderId === currentUserId;
     } else if (currentUserRole === 'STUDENT') {
       return true;
     }
-    // 그 외(관리자 등)는 모두 보기
+    // 그 외(ADMIN 등)도 모두 보기
     return true;
   });
 
@@ -275,7 +298,7 @@ export default function ArchivePage() {
         })}
         {subsI.map(fi => (
           <li key={fi.id} className="file-node" onClick={() => handleFileDoubleClick(fi)}>
-            <img src="/mini_file.png                        " className="sidebar-icon" alt="file" />
+            <img src="/mini_file.png" className="sidebar-icon" alt="file" />
             {fi.name}
           </li>
         ))}
@@ -330,43 +353,34 @@ export default function ArchivePage() {
               onChange={e => setSearchText(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleSearch()}
             />
-            <button className="search-btn" onMouseDown={handleSearch} aria-label="검색" >
-             <img src="/search-button.png" alt="돋보기" />
-           </button>
+            <button className="search-btn" onMouseDown={handleSearch} aria-label="검색">
+              <img src="/search-button.png" alt="돋보기" />
+            </button>
 
             {searchActive && (
-  <div className="search-panel">
-    {searchResults.length > 0 ? (
-      searchResults.map(f => (
-        <div
-          key={f.id}
-          className="search-item"
-          onMouseDown={() => handleFileDoubleClick(f)}
-        >
-          <img
-            src="/mini_file.png"
-            className="sidebar-icon"
-            alt="file"
-          />
-          {/* 텍스트를 별도 span으로 감쌌습니다 */}
-          <span className="search-item-text">{f.name}</span>
-        </div>
-      ))
-    ) : (
-      <div className="no-results-sidebar">검색 결과가 없습니다.</div>
-    )}
-  </div>
-)}
+              <div className="search-panel">
+                {searchResults.length > 0 ? (
+                  searchResults.map(f => (
+                    <div
+                      key={f.id}
+                      className="search-item"
+                      onMouseDown={() => handleFileDoubleClick(f)}
+                    >
+                      <img src="/mini_file.png" className="sidebar-icon" alt="file" />
+                      <span className="search-item-text">{f.name}</span>
+                    </div>
+                  ))
+                ) : (
+                  <div className="no-results-sidebar">검색 결과가 없습니다.</div>
+                )}
+              </div>
+            )}
           </div>
 
-          {!searchActive && (
-            <div className="folder-tree">
-              {renderTree(/* renderTree 내부에서도 동일하게 displayFiles 조건 고려 */)}
-        </div>
-  )}
+          {!searchActive && <div className="folder-tree">{renderTree()}</div>}
         </aside>
 
-        {/* 메인 */}
+        {/* 메인 영역 */}
         <main className="archive-main">
           {/* breadcrumb + 정렬 */}
           <div className="path-display">
@@ -411,10 +425,20 @@ export default function ArchivePage() {
               <img src="/add.png" className="folder-icon" alt="추가" />
               {addMenuOpen && (
                 <div className="add-dropdown under-add-placeholder">
-                  <button onMouseDown={e => { e.stopPropagation(); document.getElementById('file-upload').click(); }}>
+                  <button
+                    onMouseDown={e => {
+                      e.stopPropagation();
+                      document.getElementById('file-upload').click();
+                    }}
+                  >
                     파일추가
                   </button>
-                  <button onMouseDown={e => { e.stopPropagation(); handleAddFolderStart(); }}>
+                  <button
+                    onMouseDown={e => {
+                      e.stopPropagation();
+                      handleAddFolderStart();
+                    }}
+                  >
                     폴더추가
                   </button>
                 </div>
@@ -425,7 +449,10 @@ export default function ArchivePage() {
                 key={f.id}
                 className="folder-box"
                 onClick={() => handleFolderClick(f.name)}
-                onContextMenu={e => { e.preventDefault(); handleDeleteFolder(f.id); }}
+                onContextMenu={e => {
+                  e.preventDefault();
+                  handleDeleteFolder(f.id);
+                }}
               >
                 <img src="/folder.png" className="folder-icon" alt="folder" />
                 <div className="folder-name">{f.name}</div>
@@ -473,9 +500,9 @@ export default function ArchivePage() {
               >
                 <img src="/pdf-thumbnail.png" className="file-thumbnail" alt="file" />
                 <div className="file-name">{file.name}</div>
-                <div className={file-uploader}>
+                <div className="file-uploader">
                   {file.uploaderName}님 업로드
-                  </div>
+                </div>
               </div>
             ))}
           </div>
@@ -485,7 +512,9 @@ export default function ArchivePage() {
             <div className="archive-modal-overlay" onClick={closePreview}>
               <div className="archive-modal-content" onClick={e => e.stopPropagation()}>
                 <iframe src={previewFileUrl} title="PDF Preview" style={{ border: 'none' }} />
-                <button className="archive-close-btn" onClick={closePreview}>닫기</button>
+                <button className="archive-close-btn" onClick={closePreview}>
+                  닫기
+                </button>
               </div>
             </div>
           )}
