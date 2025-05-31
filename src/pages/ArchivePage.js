@@ -66,22 +66,22 @@ export default function ArchivePage() {
       try { setFolders(JSON.parse(sf)); }
       catch { localStorage.removeItem('folders'); }
     }
-    useEffect(() => {
-  // 기존: localStorage.getItem('files') → setFiles(JSON.parse(…))
-  // 수정: 서버에서 모든 파일 목록을 받아와서 setFiles(…) 한다
-  async function loadFilesFromServer() {
-    try {
-      const res = await fetch('/api/resources/file/all', {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
-      const json = await res.json();
-      setFiles(json);  // 서버에서 보내 준 전체 파일 배열
-    } catch (e) {
-      console.error('파일 목록 로드 실패', e);
+    async function loadFilesFromServer() {
+      try {
+        // 실제 백엔드 API 엔드포인트 경로로 변경하세요.
+        const response = await fetch('https://api.eduve.r-e.kr/resources/file/list', {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        });
+        if (!response.ok) throw new Error('파일 목록 로드 실패');
+        const data = await response.json();
+        setFiles(data);
+        // (원하면) localStorage에도 저장:
+        // localStorage.setItem('files', JSON.stringify(data));
+      } catch (err) {
+        console.error('파일 목록 로드 중 에러', err);
+      }
     }
-  }
-  loadFilesFromServer();
-}, []);
+    loadFilesFromServer();
   }, []);
 
   // — 로그아웃
