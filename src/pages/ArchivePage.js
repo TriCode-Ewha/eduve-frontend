@@ -2,7 +2,14 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { uploadFile, renameFile, createFolder } from '../api/fileApi';
+import {
+  uploadFile,
+  fetchFile,
+  renameFile,
+  createFolder,
+  fetchUserFolders,
+  fetchFolderContents
+} from '../api/fileApi';
 import { v4 as uuidv4 } from 'uuid';
 import { jwtDecode } from 'jwt-decode';
 import './ArchivePage.css';
@@ -85,15 +92,102 @@ export default function ArchivePage() {
     }
   }, []);
 
+  // — **API 호출: 현재 userId가 세팅되면 최상위 폴더 목록 불러오기**
+  useEffect(() => {
+    if (!currentUserId) return;
+
+    // (A) 최상위 폴더 목록 가져오기 (기존)
+  fetchUserFolders(currentUserId, sortOrder).then(res => {
+    const fetchedFolders = res.data.map(f => ({
+      id: f.id,
+      name: f.name,
+      path: []
+    }));
+    setFolders(fetchedFolders);
+    localStorage.setItem('folders', JSON.stringify(fetchedFolders));
+  }).catch(err => console.error('최상위 폴더 목록 실패', err));
+
+
+      // ── (B) 최상위(홈) 경로에 속한 파일 목록 가져오기 ──
+  (async () => {
+    try {
+      const res2 = await fetchFolderContents(currentUserId, null, sortOrder);
+      const rootFiles = res2.data.files || []; // 빈 배열일 수도 있음
+      console.log('▶▶▶ rootFiles raw:', rootFiles);
+
+      // 백엔드에서 내려준 필드명이 fileId, fileName, userId, username, role 이라는 가정
+      const mapped = rootFiles.map(ff => ({
+        id:           ff.fileId,
+        name:         ff.fileName,
+        path:         [],          // 홈이므로 path 빈 배열
+        fileUrl:      ff.fileUrl,
+        uploaderId:   ff.userId,
+        uploaderRole: ff.role,
+        uploaderName: ff.username
+      }));
+
+      setFiles(mapped);
+      localStorage.setItem('files', JSON.stringify(mapped));
+    } catch (err) {
+      console.error('루트 파일 목록 가져오기 실패', err);
+    }
+  })();
+}, [currentUserId, sortOrder]);
+
   // — 로그아웃
   const handleLogout = () => {
     localStorage.removeItem('username');
+    localStorage.removeItem('token');
+    localStorage.removeItem('folders');
+    localStorage.removeItem('files');
     navigate('/');
   };
 
-  // — 폴더 클릭: breadcrumb, 트리 이동
-  const handleFolderClick = name => setCurrentPath(p => [...p, name]);
-  const handlePathClick = idx => setCurrentPath(p => p.slice(0, idx + 1));
+  // — 폴더 클릭: breadcrumb 이동 + 하위 폴더·파일 조회 API 호출
+  const handleFolderClick = useCallback(
+    async folder => {
+      const newPath = [...currentPath, folder.name];
+      setCurrentPath(newPath);
+
+      try {
+        const res = await fetchFolderContents(currentUserId, folder.id, sortOrder);
+        const { folders: subFolders = [], files: subFiles = [] } = res.data;
+
+        console.log('▶▶▶ subFiles raw:', subFiles);
+
+        // — 하위 폴더들 state에 추가
+        const newFetchedFolders = subFolders.map(sf => ({
+          id: sf.id,
+          name: sf.name,
+          path: newPath
+        }));
+        setFolders(prev => {
+          const merged = [...prev, ...newFetchedFolders];
+          localStorage.setItem('folders', JSON.stringify(merged));
+          return merged;
+        });
+
+        // — 하위 파일들 state에 추가
+        const newFetchedFiles = subFiles.map(ff => ({
+          id: ff.fileId,
+          name: ff.fileName,
+          path: newPath,
+          fileUrl: ff.fileUrl,
+          uploaderId: ff.userId,
+          uploaderRole: ff.role,
+          uploaderName: ff.username
+        }));
+        setFiles(prev => {
+          const merged = [...prev, ...newFetchedFiles];
+          localStorage.setItem('files', JSON.stringify(merged));
+          return merged;
+        });
+      } catch (err) {
+        console.error('하위 폴더 및 파일 가져오기 실패', err);
+      }
+    },
+    [currentPath, currentUserId, sortOrder]
+  );
 
   // — Add 메뉴 토글
   const handleAddFolderStart = () => {
@@ -148,32 +242,40 @@ export default function ArchivePage() {
       return alert('토큰이 유효하지 않습니다.');
     }
 
+     // ── 지금 보고 있는 폴더의 ID 구하기 ──
+    const parentFolder = folders.find(
+      f => JSON.stringify(f.path) === JSON.stringify(currentPath)
+    );
+    const folderIdToUse = parentFolder ? parentFolder.id : null;
+
     const fd = new FormData();
     fd.append('file', file);
     fd.append('userId', userId);
-    fd.append('folderId', 1);
+    fd.append('username',uploader)
+    if (folderIdToUse != null){
+      fd.append('folderId', folderIdToUse);
+    }
 
     try {
       const res = await uploadFile(fd);
       const infoArr = res.data.fileInfo;
       const info = Array.isArray(infoArr) ? infoArr[0] : infoArr;
 
-      const nf = {
-        id: uuidv4(),
+      const newFileObj = {
+        id: info.fileId || uuidv4(),
         name: info.fileName,
         path: [...currentPath],
         fileUrl: info.fileUrl,
-        uploaderId: userId,
-        uploaderRole: currentUserRole,
-        uploaderName: uploader,
+        uploaderId: info.userId,
+        uploaderRole: info.role,
+        uploaderName: info.username,
       };
 
-      // ① React state에 추가
-      const updated = [...files, nf];
-      setFiles(updated);
-
-      // ② localStorage에 저장
-      localStorage.setItem('files', JSON.stringify(updated));
+      setFiles(prev => {
+        const merged = [...prev, newFileObj];
+        localStorage.setItem('files', JSON.stringify(merged));
+        return merged;
+      });
     } catch (err) {
       console.error('파일 업로드 실패', err);
       alert('파일 업로드에 실패했습니다.');
@@ -226,22 +328,17 @@ export default function ArchivePage() {
 
     let candidates;
     if (currentUserRole === 'ROLE_Teacher') {
-      // TEACHER라면 “모든 선생님 파일 + (본인인 학생 파일은 없음)”
-      // 사실 검색 시에도, teacher는 학생 파일을 아예 검색결과에서 제거하기 위해 아래와 같이 처리할 수 있습니다.
       candidates = files.filter(f => f.uploaderRole === 'ROLE_Teacher');
     } else if (currentUserRole === 'ROLE_Student') {
-      // STUDENT라면 “선생님 파일 전부 + 내가 올린 학생 파일”
       candidates = files.filter(f => {
         if (f.uploaderRole === 'ROLE_Teacher') return true;
         if (f.uploaderRole === 'ROLE_Student' && f.uploaderId === currentUserId) return true;
         return false;
       });
     } else {
-      // ADMIN 등 기타 역할은 “전체 공개”
       candidates = files;
     }
 
-    // 그 위에서 검색어 포함 여부 체크
     const results = candidates.filter(
       f => typeof f.name === 'string' && f.name.includes(searchText.trim())
     );
@@ -258,27 +355,20 @@ export default function ArchivePage() {
 
   // — 현재 경로에 해당하는 “화면에 뿌릴 파일” 필터링
   const displayFolders = folders.filter(
-    f => JSON.stringify(f.path) === JSON.stringify(currentPath)
+    f => JSON.stringify(f.path) === JSON.stringify(currentPath) && Boolean(f.name)
   );
 
   const displayFiles = files.filter(f => {
-    // 1) 경로(path) 일치 여부
     if (JSON.stringify(f.path) !== JSON.stringify(currentPath)) {
       return false;
     }
-
-    // 2) “선생님 파일(ROLE_TEACHER)”은 모두에게 공개
     if (f.uploaderRole === 'ROLE_Teacher') {
       return true;
     }
-
-    // 3) “학생 파일(ROLE_STUDENT)”은 ‘학생 본인’에게만 공개
     if (f.uploaderRole === 'ROLE_Student') {
       return currentUserRole === 'ROLE_Student' && f.uploaderId === currentUserId;
     }
-
-    // 4) (그 외 ADMIN 등은 모두에게 공개)
-    return false;
+    return true;
   });
 
   // — 정렬 적용 (최근순, 가나다순 등)
@@ -302,7 +392,7 @@ export default function ArchivePage() {
           const childKey = JSON.stringify([...path, f.name]);
           return (
             <li key={f.id} className="folder-node">
-              <div onClick={() => toggleExpand(childKey)}>
+              <div onClick={() => handleFolderClick(f)}>
                 <img src="/mini_folder.png" className="sidebar-icon" alt="folder" />
                 {f.name}
               </div>
@@ -390,8 +480,45 @@ export default function ArchivePage() {
               </div>
             )}
           </div>
-          {!searchActive && <div className="folder-tree">{renderTree()}</div>}
-        </aside>
+          { !searchActive && (
+    <ul className="folder-tree">
+      {/* ── 현재 경로(currentPath)에 속한 폴더만 ── */}
+      {displayFolders.map(f => (
+        <li
+          key={f.id}
+          className="sidebar-item folder-node"
+          onClick={() => handleFolderClick(f)}
+          onContextMenu={e => {
+            e.preventDefault();
+            handleDeleteFolder(f.id);
+          }}
+        >
+          <img src="/mini_folder.png" className="sidebar-icon" alt="folder" />
+          <span>{f.name}</span>
+        </li>
+      ))}
+
+      {/* ── 현재 경로(currentPath)에 속한 파일만 ── */}
+      {displayFiles.map(fi => (
+        <li
+          key={fi.id}
+          className="sidebar-item file-node"
+          onClick={() => handleFileDoubleClick(fi)}
+          onContextMenu={e => {
+            e.preventDefault();
+            // 이름 변경 vs 삭제 선택
+            const action = window.confirm('이름 변경: OK, 삭제: Cancel') ? 'rename' : 'delete';
+            if (action === 'rename') handleRenameFile(fi);
+            else handleDeleteFile(fi.id);
+          }}
+        >
+          <img src="/mini_file.png" className="sidebar-icon" alt="file" />
+          <span>{fi.name}</span>
+        </li>
+      ))}
+    </ul>
+  )}
+</aside>
 
         {/* 메인 영역 */}
         <main className="archive-main">
@@ -406,11 +533,11 @@ export default function ArchivePage() {
                   <span
                     key={i}
                     className="path-link"
-                    onClick={() => handlePathClick(i)}
+                    onClick={() => setCurrentPath(path => path.slice(0, i + 1))}
                   >
                     {' / '}{p}
                   </span>
-                ))}  
+                ))}
               </>
             )}
             <button className="sort-toggle" onClick={() => setSortMenuOpen(o => !o)}>정렬 ▼</button>
@@ -461,7 +588,7 @@ export default function ArchivePage() {
               <div
                 key={f.id}
                 className="folder-box"
-                onClick={() => handleFolderClick(f.name)}
+                onClick={() => handleFolderClick(f)}
                 onContextMenu={e => { e.preventDefault(); handleDeleteFolder(f.id); }}
               >
                 <img src="/folder.png" className="folder-icon" alt="folder" />

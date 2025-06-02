@@ -242,12 +242,19 @@ const ChatArea = ({ messages, setMessages, username }) => {
                 {msg.text.split('\n\n').map((paragraph, idx) => (<ReactMarkdown key={idx} components={markdownComponents}>{paragraph}</ReactMarkdown>))}
 
                 {!msg.userMessage && !msg.isInitialMessage && (
-                  <img
-                    src={liked[msg.messageId || msg.id] ? '/heart.png' : '/heart_empty.png'}
-                    alt="thumbs up"
-                    className="thumb-icon"
-                    onClick={() => toggleLike(msg.messageId || msg.id, liked[msg.messageId || msg.id])}
-                  />
+                  <div className="tooltip-wrapper">
+                    <img
+                      src={liked[msg.messageId || msg.id] ? '/heart.png' : '/heart_empty.png'}
+                      alt="좋아요"
+                      className="thumb-icon"
+                      onClick={() =>
+                        toggleLike(msg.messageId || msg.id, liked[msg.messageId || msg.id])
+                      }
+                    />
+                    <span className="tooltip-text">
+                      좋아요 버튼을 누르면 계속 이 스타일로 답변됩니다!
+                    </span>
+                  </div>
                 )}
 
                 {/* PDF 링크로 변경 */}

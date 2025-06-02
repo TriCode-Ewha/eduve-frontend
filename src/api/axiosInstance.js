@@ -5,7 +5,7 @@ console.log('🌐 [DEBUG] REACT_APP_API_URL =', process.env.REACT_APP_API_URL);
 
 const axiosInstance = axios.create({
   baseURL: process.env.REACT_APP_API_URL,
-  timeout: 50000,
+  timeout: 500000,
   withCredentials: true,
 });
 

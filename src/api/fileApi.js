@@ -7,15 +7,14 @@ import axiosInstance from './axiosInstance';
  * @param {FormData} formData
  */
 export const uploadFile = formData =>
-  // 파일만 직접 IP 서버로 요청
   axiosInstance.post(
     '/resources/file/text',
     formData,
     {
-      // multipart/form-data 헤더는 인터셉터에서 건드리지 않도록
       headers: { 'Content-Type': 'multipart/form-data' }
     }
   );
+
 /**
  * 파일 조회
  * @param {string|number} fileId
@@ -62,10 +61,36 @@ export const searchFiles = keyword =>
   });
 
 /**
-  * 새 폴더 생성
+ * 새 폴더 생성
  * @param {{ folderName: string, userId: number|string, parentId?: number|string|null }} data
  */
 export const createFolder = ({ folderName, userId, parentId = null }) =>
   axiosInstance.post(
-    `/folders?folderName=${encodeURIComponent(folderName)}&userId=${userId}${parentId !== null ? `&parentId=${parentId}` : ''}`
+    `/folders?folderName=${encodeURIComponent(folderName)}&userId=${userId}` +
+    (parentId !== null ? `&parentId=${parentId}` : '')
   );
+
+/**
+ * 특정 사용자의 최상위(루트) 폴더 목록 조회 + 정렬
+ * GET /folders/user/{userId}?sort=latest 또는 ?sort=name
+ */
+export const fetchUserFolders = (userId, sort = null) => {
+  const query = sort ? `?sort=${encodeURIComponent(sort)}` : '';
+  return axiosInstance.get(`/folders/user/${userId}${query}`);
+};
+
+/**
+ * 특정 폴더의 하위 폴더 및 파일 조회 + 정렬
+ * GET /folders/user/{userId}/folder/{folderId}?sort=latest 또는 ?sort=name
+ */
+export const fetchFolderContents = (userId, folderId, sort = null) => {
+  const query = sort ? `?sort=${encodeURIComponent(sort)}` : '';
+  if (folderId == null) {
+    // parentId 없이 최상위(홈) 경로 조회
+    return axiosInstance.get(`/folders/user/${userId}/folder${query}`);
+  } else {
+    // 특정 하위 폴더를 지정해서 조회
+    return axiosInstance.get(`/folders/user/${userId}/folder/${folderId}${query}`);
+  }
+};
+
