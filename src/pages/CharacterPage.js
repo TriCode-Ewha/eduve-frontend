@@ -29,15 +29,15 @@ const CharacterPage = () => {
   const toneReverseMap = {
     FORMAL: "정중한 말투",
     FRIENDLY: "친근한 말투",
-    KIND: "친절한 말투",
+    KINDLY: "친절한 말투",
     TSUNDERE: "츤데레 말투",
   };
 
   const levelReverseMap = {
-    LOW: 0,
-    LOW_MID: 1,
-    MID: 2,
-    HIGH: 3,
+    ELEMENTARY: 0,
+    MIDDLE: 1,
+    HIGH: 2,
+    UNIVERSITY: 3,
     EXPERT: 4,
   };
 
@@ -118,11 +118,11 @@ const CharacterPage = () => {
     const toneMap = {
       "정중한 말투": "FORMAL",
       "친근한 말투": "FRIENDLY",
-      "친절한 말투": "KIND",
+      "친절한 말투": "KINDLY",
       "츤데레 말투": "TSUNDERE",
     };
 
-    const levelMap = ["LOW", "LOW_MID", "MID", "HIGH", "EXPERT"];
+    const levelMap = ["ELEMENTARY", "MIDDLE", "HIGH", "UNIVERSITY", "EXPERT"];
 
     updateUserCharacter(userId, {
       characterId: selectedCharacter.characterId,
