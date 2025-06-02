@@ -177,15 +177,15 @@ const ChatArea = ({ messages, setMessages, username }) => {
         }
       );
       
-      const { botMessage, fileNameAndUrl } = res.data;
+      const { botMessage, fileInfo } = res.data;
       let filePreview = null;
 
       // fileNameAndUrl이 있을 때만 filePreview 설정
-      if (fileNameAndUrl && fileNameAndUrl.length === 3) {
+      if (fileInfo && fileInfo.fileUrl) {
         filePreview = {
-          url: fileNameAndUrl[2],
-          page: parseInt(fileNameAndUrl[1], 10) || 1,
-          title: fileNameAndUrl[0],
+          url: fileInfo.fileUrl,
+          page: parseInt(fileInfo.page, 10) || 1,
+          title: fileInfo.fileName,
         };
       }
       
