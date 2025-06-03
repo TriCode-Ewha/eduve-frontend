@@ -371,6 +371,21 @@ export default function ArchivePage() {
     return true;
   });
 
+  const rootFolders = folders.filter(f => Array.isArray(f.path) && f.path.length === 0);
+  const rootFiles = files.filter(f => {
+     if (!Array.isArray(f.path) || f.path.length !== 0) {
+       return false;
+     }
+    // 원래 displayFiles 에 있던 권한 필터링 로직을 재사용
+     if (f.uploaderRole === 'ROLE_Teacher') {
+       return true;
+     }
+     if (f.uploaderRole === 'ROLE_Student') {
+       return currentUserRole === 'ROLE_Student' && f.uploaderId === currentUserId;
+     }
+     return true;
+   });
+
   // — 정렬 적용 (최근순, 가나다순 등)
   if (sortOrder === 'recent') {
     displayFolders.reverse();
