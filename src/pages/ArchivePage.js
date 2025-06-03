@@ -204,6 +204,12 @@ export default function ArchivePage() {
       ? folders.find(f => JSON.stringify(f.path) === JSON.stringify(currentPath))?.id
       : null;
 
+    const payload = { folderName: name, userId };
+    if (parentId !== null) {
+      payload.parentId = parentId;
+    }
+
+
     try {
       const res = await createFolder({ folderName: name, userId, parentId });
       const { folderId, folderName: createdName } = res.data;
