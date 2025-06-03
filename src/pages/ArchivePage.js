@@ -371,11 +371,12 @@ export default function ArchivePage() {
     return true;
   });
 
-  const rootFolders = folders.filter(f => Array.isArray(f.path) && f.path.length === 0);
+  const rootFolders = folders.filter(f => Array.isArray(f.path) && f.path.length === 0&& Boolean(f.anme));
   const rootFiles = files.filter(f => {
      if (!Array.isArray(f.path) || f.path.length !== 0) {
        return false;
      }
+     if (!f.name) return false;
     // 원래 displayFiles 에 있던 권한 필터링 로직을 재사용
      if (f.uploaderRole === 'ROLE_Teacher') {
        return true;
