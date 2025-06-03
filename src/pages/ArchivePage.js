@@ -121,7 +121,7 @@ export default function ArchivePage() {
     // (B) 최상위 폴더(홈) 파일 목록
     (async () => {
       try {
-        const res2 = await fetchFolderContents(currentUserId, 'null', sortOrder);
+        const res2 = await fetchFolderContents(currentUserId, null, sortOrder);
         const rootFiles = res2.data.files || [];
         const mapped = rootFiles.map(ff => ({
           id:           ff.fileId,
