@@ -94,7 +94,7 @@ export default function ArchivePage() {
     if (!currentUserId) return;
 
     // (A) 최상위 폴더 목록
-    fetchUserFolders(currentUserId, sortOrder)
+    fetchUserFolders(currentUserId, null)
       .then(res => {
         const fetchedFolders = res.data.map(f => ({
           id: f.id,
@@ -121,7 +121,7 @@ export default function ArchivePage() {
     // (B) 최상위 폴더(홈) 파일 목록
     (async () => {
       try {
-        const res2 = await fetchFolderContents(currentUserId, null, sortOrder);
+        const res2 = await fetchFolderContents(currentUserId, null, null);
         const rootFiles = res2.data.files || [];
         const mapped = rootFiles.map(ff => ({
           id:           ff.fileId,
@@ -400,6 +400,14 @@ export default function ArchivePage() {
     return true;
   });
 
+  const sortedFolders = sortOrder === 'name'
+    ? [...displayFolders].sort((a, b) => a.name.localeCompare(b.name, 'ko'))
+    : displayFolders;
+
+  const sortedFiles = sortOrder === 'name'
+    ? [...displayFiles].sort((a, b) => a.name.localeCompare(b.name, 'ko'))
+    : displayFiles;
+
   // ── 사이드바 재귀 렌더링 함수 (수정됨) ──
   const renderTree = (path = [], depth = 0) => {
     const key = JSON.stringify(path);
@@ -590,7 +598,7 @@ export default function ArchivePage() {
               )}
             </div>
 
-            {displayFolders.map(f => (
+            {sortedFolders.map(f => (
               <div
                 key={f.id}
                 className="folder-box"
@@ -630,7 +638,7 @@ export default function ArchivePage() {
             {displayFiles.length === 0 && displayFolders.length === 0 && !searchActive && (
               <div className="no-results"></div>
             )}
-            {displayFiles.map(file => (
+            {sortedFiles.map(file => (
               <div
                 key={file.id}
                 className="file-box"
