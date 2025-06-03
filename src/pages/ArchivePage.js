@@ -33,7 +33,7 @@ export default function ArchivePage() {
 
   // — 정렬 상태
   const [sortMenuOpen, setSortMenuOpen] = useState(false);
-  const [sortOrder, setSortOrder] = useState('past');
+  const [sortOrder, setSortOrder] = useState('null');
 
   // — 자료(폴더/파일) 상태
   const [folders, setFolders] = useState([]);
@@ -374,7 +374,7 @@ export default function ArchivePage() {
   });
 
   // ── 사이드바 재귀 렌더링 함수 (수정됨) ──
-  const renderTree = (path = []) => {
+  const renderTree = (path = [], depth = 0) => {
     const key = JSON.stringify(path);
     const subsF = folders.filter(f => JSON.stringify(f.path) === key&&Boolean(f.name));
     const subsI = files.filter(f => JSON.stringify(f.path) === key&&Boolean(f.name));
@@ -385,7 +385,7 @@ export default function ArchivePage() {
         {subsF.map(f => {
           const childKey = JSON.stringify([...path, f.name]);
           return (
-            <li key={f.id} className="folder-node">
+            <li key={f.id} className="folder-node" style={{paddingLeft: depth *16+'px'}}>
               <div
                 onClick={() => {
                   toggleExpand(childKey);   // → “폴더 아래 드롭다운 펼치기/접기”
@@ -397,7 +397,7 @@ export default function ArchivePage() {
               </div>
 
               {/* → isExpanded(childKey)이면 재귀적으로 하위 트리 그리기 */}
-              {isExpanded(childKey) && renderTree([...path, f.name])}
+              {isExpanded(childKey) && renderTree([...path, f.name], depth + 1)}
             </li>
           );
         })}
@@ -406,6 +406,7 @@ export default function ArchivePage() {
           <li
             key={fi.id}
             className="file-node"
+            style={{ paddingLeft: depth*16+'px'}}
             onClick={() => handleFileDoubleClick(fi)}
           >
             <img src="/mini_file.png" className="sidebar-icon" alt="file" />
