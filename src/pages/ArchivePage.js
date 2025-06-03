@@ -544,13 +544,13 @@ export default function ArchivePage() {
             {sortMenuOpen && (
               <div className="sort-dropdown">
                 <button onClick={() => { setSortOrder(null); setSortMenuOpen(false); }}>
-                  {sortOrder === 'past' ? '✔ ' : ''}기본순
+                  {sortOrder === null ? '✔ ' : ''}기본순
                 </button>
                 <button onClick={() => { setSortOrder('latest'); setSortMenuOpen(false); }}>
-                  {sortOrder === 'recent' ? '✔ ' : ''}최신순
+                  {sortOrder === 'latest' ? '✔ ' : ''}최신순
                 </button>
                 <button onClick={() => { setSortOrder('name'); setSortMenuOpen(false); }}>
-                  {sortOrder === 'alpha' ? '✔ ' : ''}가나다순
+                  {sortOrder === 'name' ? '✔ ' : ''}가나다순
                 </button>
               </div>
             )}
