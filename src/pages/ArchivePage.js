@@ -33,7 +33,7 @@ export default function ArchivePage() {
 
   // — 정렬 상태
   const [sortMenuOpen, setSortMenuOpen] = useState(false);
-  const [sortOrder, setSortOrder] = useState('null');
+  const [sortOrder, setSortOrder] = useState('past');
 
   // — 자료(폴더/파일) 상태
   const [folders, setFolders] = useState([]);
@@ -521,13 +521,13 @@ export default function ArchivePage() {
             <button className="sort-toggle" onClick={() => setSortMenuOpen(o => !o)}>정렬 ▼</button>
             {sortMenuOpen && (
               <div className="sort-dropdown">
-                <button onClick={() => { setSortOrder(null); setSortMenuOpen(false); }}>
+                <button onClick={() => { setSortOrder('past'); setSortMenuOpen(false); }}>
                   {sortOrder === 'past' ? '✔ ' : ''}기본순
                 </button>
-                <button onClick={() => { setSortOrder('latest'); setSortMenuOpen(false); }}>
+                <button onClick={() => { setSortOrder('recent'); setSortMenuOpen(false); }}>
                   {sortOrder === 'recent' ? '✔ ' : ''}최신순
                 </button>
-                <button onClick={() => { setSortOrder('name'); setSortMenuOpen(false); }}>
+                <button onClick={() => { setSortOrder('alpha'); setSortMenuOpen(false); }}>
                   {sortOrder === 'alpha' ? '✔ ' : ''}가나다순
                 </button>
               </div>
