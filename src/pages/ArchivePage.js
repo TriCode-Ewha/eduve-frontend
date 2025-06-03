@@ -144,6 +144,11 @@ export default function ArchivePage() {
             !existingFiles.some(e=>e.id===fNew.id)
           )
         ];
+
+        if(sortOrder === 'name'){
+          mergedFiles.sort((a,b)=>
+          a.name.localCompare(b.name,'ko'));
+        }
         setFiles(mergedFiles);
         localStorage.setItem('files', JSON.stringify(mergedFiles));
       } catch (err) {
