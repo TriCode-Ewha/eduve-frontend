@@ -376,8 +376,8 @@ export default function ArchivePage() {
   // ── 사이드바 재귀 렌더링 함수 (수정됨) ──
   const renderTree = (path = []) => {
     const key = JSON.stringify(path);
-    const subsF = folders.filter(f => JSON.stringify(f.path) === key);
-    const subsI = files.filter(f => JSON.stringify(f.path) === key);
+    const subsF = folders.filter(f => JSON.stringify(f.path) === key&&Boolean(f.name));
+    const subsI = files.filter(f => JSON.stringify(f.path) === key&&Boolean(fi.name));
     if (!subsF.length && !subsI.length) return null;
 
     return (
@@ -520,13 +520,13 @@ export default function ArchivePage() {
             <button className="sort-toggle" onClick={() => setSortMenuOpen(o => !o)}>정렬 ▼</button>
             {sortMenuOpen && (
               <div className="sort-dropdown">
-                <button onClick={() => { setSortOrder('past'); setSortMenuOpen(false); }}>
+                <button onClick={() => { setSortOrder(null); setSortMenuOpen(false); }}>
                   {sortOrder === 'past' ? '✔ ' : ''}기본순
                 </button>
-                <button onClick={() => { setSortOrder('recent'); setSortMenuOpen(false); }}>
+                <button onClick={() => { setSortOrder('latest'); setSortMenuOpen(false); }}>
                   {sortOrder === 'recent' ? '✔ ' : ''}최신순
                 </button>
-                <button onClick={() => { setSortOrder('alpha'); setSortMenuOpen(false); }}>
+                <button onClick={() => { setSortOrder('name'); setSortMenuOpen(false); }}>
                   {sortOrder === 'alpha' ? '✔ ' : ''}가나다순
                 </button>
               </div>
