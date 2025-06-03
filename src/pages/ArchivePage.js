@@ -498,7 +498,7 @@ export default function ArchivePage() {
           { !searchActive && (
     <ul className="folder-tree">
       {/* ── 현재 경로(currentPath)에 속한 폴더만 ── */}
-      {displayFolders.map(f => (
+      {rootFolders.map(f => (
         <li
           key={f.id}
           className="sidebar-item folder-node"
@@ -514,7 +514,7 @@ export default function ArchivePage() {
       ))}
 
       {/* ── 현재 경로(currentPath)에 속한 파일만 ── */}
-      {displayFiles.map(fi => (
+      {rootFiles.map(fi => (
         <li
           key={fi.id}
           className="sidebar-item file-node"
