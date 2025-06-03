@@ -58,7 +58,6 @@ export default function ArchivePage() {
 
   // — 컴포넌트 마운트 시: localStorage → state로 불러오기 + 토큰 디코딩
   useEffect(() => {
-    // ① 토큰에서 userId, role, username 꺼내기
     const token = localStorage.getItem('token');
     if (token) {
       try {
@@ -71,7 +70,6 @@ export default function ArchivePage() {
       }
     }
 
-    // ② localStorage에서 folders load
     const sf = localStorage.getItem('folders');
     if (sf) {
       try {
@@ -81,7 +79,6 @@ export default function ArchivePage() {
       }
     }
 
-    // ③ localStorage에서 files load
     const sF = localStorage.getItem('files');
     if (sF) {
       try {
@@ -96,43 +93,40 @@ export default function ArchivePage() {
   useEffect(() => {
     if (!currentUserId) return;
 
-    // (A) 최상위 폴더 목록 가져오기 (기존)
-  fetchUserFolders(currentUserId, sortOrder).then(res => {
-    const fetchedFolders = res.data.map(f => ({
-      id: f.id,
-      name: f.name,
-      path: []
-    }));
-    setFolders(fetchedFolders);
-    localStorage.setItem('folders', JSON.stringify(fetchedFolders));
-  }).catch(err => console.error('최상위 폴더 목록 실패', err));
+    // (A) 최상위 폴더 목록
+    fetchUserFolders(currentUserId, sortOrder)
+      .then(res => {
+        const fetchedFolders = res.data.map(f => ({
+          id: f.id,
+          name: f.name,
+          path: []
+        }));
+        setFolders(fetchedFolders);
+        localStorage.setItem('folders', JSON.stringify(fetchedFolders));
+      })
+      .catch(err => console.error('최상위 폴더 목록 실패', err));
 
-
-      // ── (B) 최상위(홈) 경로에 속한 파일 목록 가져오기 ──
-  (async () => {
-    try {
-      const res2 = await fetchFolderContents(currentUserId, null, sortOrder);
-      const rootFiles = res2.data.files || []; // 빈 배열일 수도 있음
-      console.log('▶▶▶ rootFiles raw:', rootFiles);
-
-      // 백엔드에서 내려준 필드명이 fileId, fileName, userId, username, role 이라는 가정
-      const mapped = rootFiles.map(ff => ({
-        id:           ff.fileId,
-        name:         ff.fileName,
-        path:         [],          // 홈이므로 path 빈 배열
-        fileUrl:      ff.fileUrl,
-        uploaderId:   ff.userId,
-        uploaderRole: ff.role,
-        uploaderName: ff.username
-      }));
-
-      setFiles(mapped);
-      localStorage.setItem('files', JSON.stringify(mapped));
-    } catch (err) {
-      console.error('루트 파일 목록 가져오기 실패', err);
-    }
-  })();
-}, [currentUserId, sortOrder]);
+    // (B) 최상위 폴더(홈) 파일 목록
+    (async () => {
+      try {
+        const res2 = await fetchFolderContents(currentUserId, null, sortOrder);
+        const rootFiles = res2.data.files || [];
+        const mapped = rootFiles.map(ff => ({
+          id:           ff.fileId,
+          name:         ff.fileName,
+          path:         [], // 홈이므로 path 빈 배열
+          fileUrl:      ff.fileUrl,
+          uploaderId:   ff.userId,
+          uploaderRole: ff.role,
+          uploaderName: ff.username
+        }));
+        setFiles(mapped);
+        localStorage.setItem('files', JSON.stringify(mapped));
+      } catch (err) {
+        console.error('루트 파일 목록 가져오기 실패', err);
+      }
+    })();
+  }, [currentUserId, sortOrder]);
 
   // — 로그아웃
   const handleLogout = () => {
@@ -146,16 +140,16 @@ export default function ArchivePage() {
   // — 폴더 클릭: breadcrumb 이동 + 하위 폴더·파일 조회 API 호출
   const handleFolderClick = useCallback(
     async folder => {
+      // 1) 메인 화면을 해당 폴더 안으로 바꾸기 위해 currentPath 갱신
       const newPath = [...currentPath, folder.name];
       setCurrentPath(newPath);
 
+      // 2) API에서 하위 폴더/파일 불러와서 state에 병합
       try {
         const res = await fetchFolderContents(currentUserId, folder.id, sortOrder);
         const { folders: subFolders = [], files: subFiles = [] } = res.data;
 
-        console.log('▶▶▶ subFiles raw:', subFiles);
-
-        // — 하위 폴더들 state에 추가
+        // ── 하위 폴더 state에 추가 ──
         const newFetchedFolders = subFolders.map(sf => ({
           id: sf.id,
           name: sf.name,
@@ -167,7 +161,7 @@ export default function ArchivePage() {
           return merged;
         });
 
-        // — 하위 파일들 state에 추가
+        // ── 하위 파일 state에 추가 ──
         const newFetchedFiles = subFiles.map(ff => ({
           id: ff.fileId,
           name: ff.fileName,
@@ -195,7 +189,7 @@ export default function ArchivePage() {
     setAddMenuOpen(false);
   };
 
-  // — 폴더 생성 API 호출
+  // — 폴더 생성 API 호출 (예: 현재 위치에 생성)
   const handleAddFolder = useCallback(async () => {
     const name = newFolderName.trim();
     if (!name) return alert('폴더 이름을 입력해주세요.');
@@ -205,16 +199,18 @@ export default function ArchivePage() {
     } catch {
       return alert('토큰이 유효하지 않습니다.');
     }
+    // ── 수정 포인트: 현재 화면(currentPath)에 따라 parentId 지정
     const parentId = currentPath.length
       ? folders.find(f => JSON.stringify(f.path) === JSON.stringify(currentPath))?.id
       : null;
+
     try {
       const res = await createFolder({ folderName: name, userId, parentId });
       const { folderId, folderName: createdName } = res.data;
       const newFolderItem = {
         id: folderId,
         name: createdName,
-        path: [...currentPath],
+        path: [...currentPath],  // 현재 위치가 path로 저장됨
       };
       const updated = [...folders, newFolderItem];
       setFolders(updated);
@@ -228,7 +224,7 @@ export default function ArchivePage() {
     }
   }, [newFolderName, currentPath, folders]);
 
-  // — 파일 업로드 핸들러
+  // — 파일 업로드 핸들러 (현재 위치에 파일 업로드)
   const handleFileSelect = async e => {
     const file = e.target.files[0];
     if (!file) return;
@@ -242,7 +238,7 @@ export default function ArchivePage() {
       return alert('토큰이 유효하지 않습니다.');
     }
 
-     // ── 지금 보고 있는 폴더의 ID 구하기 ──
+    // 지금 보고 있는 폴더의 ID 구하기
     const parentFolder = folders.find(
       f => JSON.stringify(f.path) === JSON.stringify(currentPath)
     );
@@ -251,8 +247,8 @@ export default function ArchivePage() {
     const fd = new FormData();
     fd.append('file', file);
     fd.append('userId', userId);
-    fd.append('username',uploader)
-    if (folderIdToUse != null){
+    fd.append('username', uploader);
+    if (folderIdToUse != null) {
       fd.append('folderId', folderIdToUse);
     }
 
@@ -264,7 +260,7 @@ export default function ArchivePage() {
       const newFileObj = {
         id: info.fileId || uuidv4(),
         name: info.fileName,
-        path: [...currentPath],
+        path: [...currentPath],    // 현재 화면 위치에 저장
         fileUrl: info.fileUrl,
         uploaderId: info.userId,
         uploaderRole: info.role,
@@ -371,55 +367,43 @@ export default function ArchivePage() {
     return true;
   });
 
-  const rootFolders = folders.filter(f => Array.isArray(f.path) && f.path.length === 0&& Boolean(f.anme));
-  const rootFiles = files.filter(f => {
-     if (!Array.isArray(f.path) || f.path.length !== 0) {
-       return false;
-     }
-     if (!f.name) return false;
-    // 원래 displayFiles 에 있던 권한 필터링 로직을 재사용
-     if (f.uploaderRole === 'ROLE_Teacher') {
-       return true;
-     }
-     if (f.uploaderRole === 'ROLE_Student') {
-       return currentUserRole === 'ROLE_Student' && f.uploaderId === currentUserId;
-     }
-     return true;
-   });
-
-  // — 정렬 적용 (최근순, 가나다순 등)
-  if (sortOrder === 'recent') {
-    displayFolders.reverse();
-    displayFiles.reverse();
-  } else if (sortOrder === 'alpha') {
-    displayFolders.sort((a, b) => a.name.localeCompare(b.name));
-    displayFiles.sort((a, b) => a.name.localeCompare(b.name));
-  }
-
-  // — 사이드바 재귀 렌더링
+  // ── 사이드바 재귀 렌더링 함수 (수정됨) ──
   const renderTree = (path = []) => {
     const key = JSON.stringify(path);
     const subsF = folders.filter(f => JSON.stringify(f.path) === key);
     const subsI = files.filter(f => JSON.stringify(f.path) === key);
     if (!subsF.length && !subsI.length) return null;
+
     return (
       <ul>
         {subsF.map(f => {
           const childKey = JSON.stringify([...path, f.name]);
           return (
             <li key={f.id} className="folder-node">
-              <div onClick={() => handleFolderClick(f)}>
+              <div
+                onClick={() => {
+                  toggleExpand(childKey);   // → “폴더 아래 드롭다운 펼치기/접기”
+                  handleFolderClick(f);     // → “메인 화면을 해당 폴더(경로)로 이동”
+                }}
+              >
                 <img src="/mini_folder.png" className="sidebar-icon" alt="folder" />
-                {f.name}
+                <span>{f.name}</span>
               </div>
+
+              {/* → isExpanded(childKey)이면 재귀적으로 하위 트리 그리기 */}
               {isExpanded(childKey) && renderTree([...path, f.name])}
             </li>
           );
         })}
+
         {subsI.map(fi => (
-          <li key={fi.id} className="file-node" onClick={() => handleFileDoubleClick(fi)}>
+          <li
+            key={fi.id}
+            className="file-node"
+            onClick={() => handleFileDoubleClick(fi)}
+          >
             <img src="/mini_file.png" className="sidebar-icon" alt="file" />
-            {fi.name}
+            <span>{fi.name}</span>
           </li>
         ))}
       </ul>
@@ -431,7 +415,9 @@ export default function ArchivePage() {
       {/* 네비게이션 바 */}
       <nav className="navbar">
         <h1 className="logo" onClick={() => navigate('/')}>
-          <span className="edu">Edu</span><span className="ve">'ve</span><span className="com">.com</span>
+          <span className="edu">Edu</span>
+          <span className="ve">'ve</span>
+          <span className="com">.com</span>
         </h1>
         <div className="nav-links">
           <span className="nav-item" onClick={() => navigate('/character')}>캐릭터</span>
@@ -496,45 +482,14 @@ export default function ArchivePage() {
               </div>
             )}
           </div>
-          { !searchActive && (
-    <ul className="folder-tree">
-      {/* ── 현재 경로(currentPath)에 속한 폴더만 ── */}
-      {rootFolders.map(f => (
-        <li
-          key={f.id}
-          className="sidebar-item folder-node"
-          onClick={() => handleFolderClick(f)}
-          onContextMenu={e => {
-            e.preventDefault();
-            handleDeleteFolder(f.id);
-          }}
-        >
-          <img src="/mini_folder.png" className="sidebar-icon" alt="folder" />
-          <span>{f.name}</span>
-        </li>
-      ))}
 
-      {/* ── 현재 경로(currentPath)에 속한 파일만 ── */}
-      {rootFiles.map(fi => (
-        <li
-          key={fi.id}
-          className="sidebar-item file-node"
-          onClick={() => handleFileDoubleClick(fi)}
-          onContextMenu={e => {
-            e.preventDefault();
-            // 이름 변경 vs 삭제 선택
-            const action = window.confirm('이름 변경: OK, 삭제: Cancel') ? 'rename' : 'delete';
-            if (action === 'rename') handleRenameFile(fi);
-            else handleDeleteFile(fi.id);
-          }}
-        >
-          <img src="/mini_file.png" className="sidebar-icon" alt="file" />
-          <span>{fi.name}</span>
-        </li>
-      ))}
-    </ul>
-  )}
-</aside>
+          { !searchActive && (
+            // ↓ “전체 트리”를 처음부터 재귀적으로 렌더링
+            <div className="folder-tree">
+              {renderTree()}  
+            </div>
+          )}
+        </aside>
 
         {/* 메인 영역 */}
         <main className="archive-main">
@@ -572,7 +527,7 @@ export default function ArchivePage() {
             )}
           </div>
 
-          {/* 폴더 리스트 (아직 레벨 0일 때) */}
+          {/* 메인: 현재 경로에 속한 “폴더” 목록 */}
           <div className="folder-list">
             <div
               className="folder-box add-placeholder"
@@ -600,6 +555,7 @@ export default function ArchivePage() {
                 </div>
               )}
             </div>
+
             {displayFolders.map(f => (
               <div
                 key={f.id}
@@ -611,6 +567,7 @@ export default function ArchivePage() {
                 <div className="folder-name">{f.name}</div>
               </div>
             ))}
+
             {isAddingFolder && (
               <div className="folder-box new-folder">
                 <img src="/folder.png" className="folder-icon" alt="new folder" />
@@ -634,7 +591,7 @@ export default function ArchivePage() {
             onChange={handleFileSelect}
           />
 
-          {/* 파일 리스트 */}
+          {/* 메인: 현재 경로에 속한 “파일” 목록 */}
           <div className="file-list">
             {displayFiles.length === 0 && displayFolders.length === 0 && !searchActive && (
               <div className="no-results"></div>
