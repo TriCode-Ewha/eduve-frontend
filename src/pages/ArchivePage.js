@@ -101,15 +101,27 @@ export default function ArchivePage() {
           name: f.name,
           path: []
         }));
-        setFolders(fetchedFolders);
-        localStorage.setItem('folders', JSON.stringify(fetchedFolders));
+
+        let existing = [];
+        try{
+          existing = JSON.parse(localStorage.getItem('folders'))|| [];
+        } catch { existing= [];}
+        const merged = [
+          ...existing,
+          ...fetchedFolders.filter(fNew =>
+            !existing.some(e=>e.id===fNew.id)
+          )
+        ];
+
+        setFolders(merged);
+        localStorage.setItem('folders', JSON.stringify(merged));
       })
       .catch(err => console.error('최상위 폴더 목록 실패', err));
 
     // (B) 최상위 폴더(홈) 파일 목록
     (async () => {
       try {
-        const res2 = await fetchFolderContents(currentUserId, null, sortOrder);
+        const res2 = await fetchFolderContents(currentUserId, 'null', sortOrder);
         const rootFiles = res2.data.files || [];
         const mapped = rootFiles.map(ff => ({
           id:           ff.fileId,
@@ -120,8 +132,20 @@ export default function ArchivePage() {
           uploaderRole: ff.role,
           uploaderName: ff.username
         }));
-        setFiles(mapped);
-        localStorage.setItem('files', JSON.stringify(mapped));
+
+        let existingFiles = [];
+        try{
+          existingFiles =JSON.parse(localStorage.getItem('files')) || [];
+        } catch { existingFiles = [];}
+
+        const mergedFiles =[
+          ...existingFiles,
+          ...mapped.filter(fNew =>
+            !existingFiles.some(e=>e.id===fNew.id)
+          )
+        ];
+        setFiles(mergedFiles);
+        localStorage.setItem('files', JSON.stringify(mergedFiles));
       } catch (err) {
         console.error('루트 파일 목록 가져오기 실패', err);
       }
@@ -132,8 +156,6 @@ export default function ArchivePage() {
   const handleLogout = () => {
     localStorage.removeItem('username');
     localStorage.removeItem('token');
-    localStorage.removeItem('folders');
-    localStorage.removeItem('files');
     navigate('/');
   };
 
