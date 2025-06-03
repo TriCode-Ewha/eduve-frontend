@@ -377,7 +377,7 @@ export default function ArchivePage() {
   const renderTree = (path = []) => {
     const key = JSON.stringify(path);
     const subsF = folders.filter(f => JSON.stringify(f.path) === key&&Boolean(f.name));
-    const subsI = files.filter(f => JSON.stringify(f.path) === key&&Boolean(fi.name));
+    const subsI = files.filter(f => JSON.stringify(f.path) === key&&Boolean(f.name));
     if (!subsF.length && !subsI.length) return null;
 
     return (
