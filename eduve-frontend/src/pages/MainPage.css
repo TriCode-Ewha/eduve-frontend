@@ -1,0 +1,95 @@
+/* 전체 배경색 */
+.main-container {
+  background-color: #fdf8f2;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 네비게이션 바 */
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 50px;
+  background-color: #fdf8f2;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  font-size: 1.8rem;
+  font-weight: bold;
+}
+.logo .edu { color: #1B512D; }
+.logo .ve  { color: #3A973E; }
+.logo .com { color: #1B512D; }
+
+.nav-links {
+  display: flex;
+  gap: 80px;
+  font-size: 1.1rem;
+  color: #1B512D;
+}
+.nav-links span {
+  cursor: pointer;
+  font-weight: bold;
+  transition: color 0.2s;
+}
+.nav-links span:hover {
+  color: #3A973E;
+}
+.user-name, .logout-btn {
+  color: #3A973E;
+}
+
+/* 서브 헤더 */
+.sub-header {
+  text-align: center;
+  font-size: 1.2rem;
+  color: #1B512D;
+  margin: 20px 0;
+}
+
+/* 큰 타이틀 배너 */
+.hero-title {
+  background-color: #f8d6d6;
+  text-align: center;
+  padding: 40px 0;
+  font-size: 11rem;
+  font-weight: bold;
+  color: #1B512D;
+  line-height: 1;
+  margin: 0;
+}
+
+/* 3D 캐릭터 이미지 배치 */
+.hero-images {
+  position: relative;
+  width: 100%;
+  height: 500px;
+}
+.hero-images img {
+  position: absolute;
+}
+
+.hero-images .dragon {
+  left: calc(50% - 460px);
+  width: 400px;
+  transform: scaleX(-1); /* 좌우 반전 */
+  bottom: 0;
+  filter: drop-shadow(10px 5px 10px rgba(96,94,94));
+}
+.hero-images .potato {
+  left: 50%;
+  transform: translateX(-50%);
+  width: 300px;
+  bottom: 20px;
+  filter: drop-shadow(10px 5px 10px rgba(96,94,94));
+}
+.hero-images .cat {
+  left: calc(50% + 60px);
+  width: 380px;
+  bottom: 20px;
+  filter: drop-shadow(10px 5px 10px rgb(96, 94, 94));
+}

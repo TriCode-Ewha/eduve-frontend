@@ -1,0 +1,328 @@
+.character-page-container {
+    background-color: #fdf8f2;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 50px;
+    background-color: #fdf8f2;
+  }
+  
+  .logo {
+    display: flex;
+    align-items: center;
+    font-size: 1.8rem;
+    font-weight: bold;
+  }
+  
+  .edu {
+    color: #1B512D;
+  }
+  
+  .ve {
+    color: #3A973E;
+  }
+
+  .com{
+    color: #1B512D;
+  }
+  
+  .nav-links {
+    display: flex;
+    gap: 30px;
+    align-items: center;
+    position: relative;
+    overflow: visible;
+  }
+  
+  .nav-item {
+    cursor: pointer;
+    color: #004400;
+  }
+  
+  .logout-btn {
+    color: #3A973E;
+  }
+  
+  .character-content {
+    display: flex;
+    padding: 40px 60px;
+    flex: 1;
+  }
+  
+  /* 왼쪽 캐릭터 이미지 */
+  .character-image {
+    width: 600px;
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .character-image-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 80px;
+  }
+  
+  .main-image {
+    width: 400px;
+    height: auto;
+  }
+
+  .thumbnail-list{
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
+  }
+
+  .thumbnail-list .thumbnail{
+    width: 80px;
+    height: auto;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: box-shadow 0.2s, transform 0.2s;
+  }
+
+  .thumbnail-list .thumbnail.selected {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    transform: translateY(-4px);
+  }
+  
+  .character-name {
+    margin-top: 20px;
+    font-weight: bold;
+  }
+  
+  /* 오른쪽 설정 */
+  .character-settings {
+    flex: 1;
+    padding-left: 60px;
+    display: flex;
+    align-items: flex-start;
+  }
+  
+  .settings-box {
+    width: 100%;
+    height: 500px;
+    background-color: #fbece8;
+    padding: 70px;
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+  }
+  
+  .setting-group {
+    display: flex;
+    flex-direction: column;
+    gap: 60px; /* 이름, 말투, 수준 사이 간격 조절 */
+    margin-top: 25px;
+  }
+  
+  .setting-item label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 10px;
+  }
+  
+  .setting-item input[type="text"] {
+    background-color: #ddd;       /* 버튼 기본 회색 배경 */
+    border: none;                 /* 기본 테두리 제거 */
+    border-radius: 20px;          /* 둥근 모서리 */
+    padding: 12px 20px;           /* 말투 버튼과 비슷한 높이/패딩 */
+    font-size: 1rem;
+    width: 100%;
+    max-width: 450px;
+    box-sizing: border-box;
+  }
+  
+  /* 포커스 시 약간 어두운 테두리 추가 (선택사항) */
+  .setting-item input[type="text"]:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(0,0,0,0.1);
+  }
+  
+  /* 말투 버튼 */
+  .tone-buttons {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px 20px;
+    width: 100%;
+  }
+  
+  .tone-buttons button {
+    padding: 12px 0;
+    border: none;
+    border-radius: 20px;
+    background-color: #ddd;
+    cursor: pointer;
+    transition: 0.3s;
+    font-size: 1rem;
+    margin-bottom: 10px;
+  }
+  
+  .tone-buttons button.selected {
+    background-color:#CDD6A2;
+  }
+  
+  /* 사용자 수준 */
+  .level-label-wrapper {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+  
+  .user-level-desc {
+    font-size: 0.85rem;
+    color: #888;
+  }
+  
+  .user-level-wrapper {
+    width: 100%;
+    margin-top: 10px;
+  }
+  
+  input[type="range"] {
+    width: 100%;
+    height: 8px;
+    border-radius: 4px;
+    background: transparent;
+    appearance: none;
+    -webkit-appearance: none;
+    outline: none;
+  }
+  
+  input[type="range"]::-webkit-slider-thumb {
+    appearance: none;
+    -webkit-appearance: none;
+    height: 20px;
+    width: 20px;
+    border-radius: 50%;
+    background:#CDD6A2;
+    cursor: pointer;
+    margin-top: -6px;
+    border: none;
+  }
+  
+  input[type="range"]::-moz-range-thumb {
+    height: 20px;
+    width: 20px;
+    border-radius: 50%;
+    background: #CDD6A2;
+    cursor: pointer;
+    border: none;
+  }
+  
+  input[type="range"]::-webkit-slider-runnable-track {
+    height: 8px;
+    border-radius: 4px;
+    background: transparent;
+  }
+  
+  input[type="range"]::-moz-range-track {
+    height: 8px;
+    border-radius: 4px;
+    background: #ddd;
+  }
+  
+  .level-labels {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.9rem;
+    margin-top: 8px;
+  }
+  
+  /* 저장 버튼 - 오른쪽 영역 내부 하단 중앙 */
+  .save-button {
+    position: absolute;
+    bottom: 55px;
+    right: 440px;
+    transform: translateX(-50%);
+    background-color: #CDD6A2;
+    padding: 12px 30px;
+    border: none;
+    border-radius: 20px;
+    font-size: 1.1rem;
+    cursor: pointer;
+  }
+
+  .user-menu{
+    position: relative;
+    overflow: visible;
+  }
+  
+  .user-menu .user-button {
+    background-color: #1B512D;  /* 진한 녹색 */
+    color: #fff;
+    padding: 12px 20px;         /* 저장 버튼과 동일한 패딩 */
+    border: none;
+    border-radius: 20px;        /* 둥근 모서리 */
+    font-size: 1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+  }
+  
+  /* ─── 드롭다운 컨테이너: 세로 정렬 ─── */
+  .user-menu .user-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    display: flex;
+    flex-direction: column;     /* ▶ 세로 스택 */
+    min-width: 140px;
+    overflow: hidden;
+    z-index: 1000;
+  }
+  
+  /* ─── 드롭다운 항목 ─── */
+  .user-menu .user-dropdown button {
+    padding: 12px 20px;
+    background: none;
+    border: none;
+    text-align: left;
+    font-size: 0.95rem;
+    color: #1B512D;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+  }
+  .user-menu .user-dropdown button + button {
+    border-top: 1px solid #eee; /* 항목 사이 구분선 */
+  }
+  .user-menu .user-dropdown button:hover {
+    background-color: #f5f5f5;
+  }
+
+  .save-notification {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0,0,0,0.75);
+  color: #fff;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 1rem;
+  z-index: 10000;
+  opacity: 0;
+  animation: fadeInOut 2s forwards;
+}
+
+@keyframes fadeInOut {
+  0%   { opacity: 0; }
+  10%  { opacity: 1; }
+  90%  { opacity: 1; }
+  100% { opacity: 0; }
+}

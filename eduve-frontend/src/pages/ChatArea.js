@@ -57,15 +57,10 @@ const ChatArea = ({ messages, setMessages, username }) => {
   const [graphMode, setGraphMode] = useState(false); // 그래프 모드 여부
   const graphBtnRef = useRef(null);
   const [hoverGraphBtn, setHoverGraphBtn] = useState(false);
-  const [urlMode, setUrlMode] = useState(false); // ★ URL 모드 추가
-  const urlBtnRef = useRef(null);
-  const [hoverUrlBtn, setHoverUrlBtn] = useState(false);
 
   const toggleGraphMode = () => {
     setGraphMode(prev => !prev);
   };
-  const toggleUrlMode = () => setUrlMode(prev => !prev); // ★ URL 모드 토글
-
 
   // 초기 메시지 설정
   useEffect(() => {
@@ -171,10 +166,9 @@ const ChatArea = ({ messages, setMessages, username }) => {
     // 백엔드 요청
     try {
       const graphParam = graphMode ? 1 : 0;
-      const urlParam = urlMode ? 1 : 0;
       
       const res = await axiosInstance.post(
-        `/chat/start/${userId}?graph=${graphParam}&url=${urlParam}`, // ← 쿼리 파라미터 추가됨
+        `/chat/start/${userId}?graph=${graphParam}`, // ← 쿼리 파라미터 추가됨
         { question },
         {
           headers: {
@@ -188,10 +182,12 @@ const ChatArea = ({ messages, setMessages, username }) => {
 
       // fileNameAndUrl이 있을 때만 filePreview 설정
       if (fileInfo && fileInfo.fileUrl) {
+        const rawName = fileInfo.fileName;
+        const cleanName=rawName.replace(/^[^/]*\//, '')
         filePreview = {
           url: fileInfo.fileUrl,
           page: parseInt(fileInfo.page, 10) || 1,
-          title: fileInfo.fileName,
+          title: cleanName,
         };
       }
       
@@ -313,22 +309,6 @@ const ChatArea = ({ messages, setMessages, username }) => {
             <TooltipPortal targetRef={graphBtnRef} visible={hoverGraphBtn}>
               그래프/표를 분석하고 싶으면 여기를 누르세요!
             </TooltipPortal>
-
-            {/* URL Mode 버튼 ★ */}
-            <div className="tooltip-wrapper" style={{ marginLeft: '1px' }}>
-              <button
-                ref={urlBtnRef}
-                className={`graph-toggle-btn ${urlMode ? 'active' : ''}`}
-                onClick={toggleUrlMode}
-                onMouseEnter={() => setHoverUrlBtn(true)}
-                onMouseLeave={() => setHoverUrlBtn(false)}
-              >
-                🔗
-              </button>
-            </div>
-            <TooltipPortal targetRef={urlBtnRef} visible={hoverUrlBtn}>
-              파일의 URL도 함께 답변받고 싶다면 여기를 누르세요!
-            </TooltipPortal>
             
 
             <input
@@ -347,48 +327,19 @@ const ChatArea = ({ messages, setMessages, username }) => {
 
       {/* PDF 미리보기 모달 */}
       {previewPdfUrl && (
-        <div
-          className="modal-overlay"
-          onClick={closePdfPreview}
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0,0,0,0.6)',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            zIndex: 9999,
-          }}
-        >
-          <div
-            className="modal-content"
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              width: '85vw',
-              height: '80vh',
-              backgroundColor: 'white',
-              borderRadius: 8,
-              position: 'relative',
-              padding: 10,
-              boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-            }}
-          >
-            <button
-              onClick={closePdfPreview}
-              style={{ position: 'absolute', top: 10, right: 10, cursor: 'pointer' }}
-            >
-              닫기
-            </button>
+        <div className="chat-modal-overlay" onClick={closePdfPreview}>
+          <div className="chat-modal-content" onClick={e => e.stopPropagation()}>
             <iframe
               src={previewPdfUrl}
               title="PDF Preview"
-              width="100%"
-              height="90%"
-              style={{ border: 'none' }}
+              className="chat-modal-iframe"
             />
+            <button
+              className="chat-modal-close-btn"
+              onClick={closePdfPreview}
+            >
+              닫기
+            </button>
           </div>
         </div>
       )}

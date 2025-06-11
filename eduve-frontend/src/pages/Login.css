@@ -1,0 +1,92 @@
+.login-container {
+    text-align: center;
+    background-color: #fdf6f0;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.title {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: #1B512D;
+    margin-bottom: 500px;
+}
+
+.edu {
+    color: #1B512D;
+}
+
+.ve {
+    color: #3A973E;
+}
+.com{
+    color: #1B512D;
+}
+
+/* 로그인 폼 스타일 */
+.login-form {
+    margin-top: 80px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 350px;
+}
+
+.login-form input {
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 0.9rem;
+}
+
+.login-form input:focus {
+    border-color: #1B512D;
+    outline: 1px solid #1B512D;
+}
+
+.login-btn {
+    background-color: #CDD6A2;
+    color: black;
+    border: none;
+    padding: 12px;
+    width: 100%;
+    border-radius: 5px;
+    font-size: 1rem;
+    cursor: pointer;
+    margin-top: 50px;
+}
+
+.login-btn:hover {
+    background-color: #CDD6A2;
+}
+
+/* 구분선 */
+hr {
+    width: 350px;
+    border: none;
+    border-top: 1px solid #ddd;
+    margin: 20px 0;
+}
+
+/* 하단 링크 스타일 */
+.links {
+    font-size: 0.9rem;
+    color: #333;
+}
+
+.links span {
+    cursor: pointer;
+    margin: 0 5px;
+}
+
+.signup-link {
+    color: inherit;
+    font-weight: normal;
+}
+
+.signup-link:hover {
+    text-decoration: underline;
+}

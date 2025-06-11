@@ -1,0 +1,15 @@
+
+{
+  "version":2,
+  "rewrites": [
+    {
+      "source": "/resources/:path*",
+      "destination": "http://15.165.205.11:8080/resources/:path*"
+    },
+    {
+      "source": "/folders/:path*",
+      "destination": "http://15.165.205.11:8080/folders/:path*"
+    }
+
+  ]
+}
