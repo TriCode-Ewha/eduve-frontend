@@ -1,0 +1,506 @@
+/* src/pages/ArchivePage.css */
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   ArchivePage.css
+   전체 스타일: 네비게이션, 사이드바, 메인, add/정렬 버튼, 폴더/파일 리스트, 모달 등
+──────────────────────────────────────────────────────────────────────────── */
+
+/* ─── CSS 변수: 레이아웃 높이 계산용 ─── */
+:root {
+  --header-height:       60px;  /* 네비게이션 바(헤더) 높이 */
+  --body-padding-left:   30px;  /* .archive-body 왼쪽 패딩(archive-body 내부) */
+  --body-padding-bottom: 30px;  /* .archive-body 아래쪽 패딩 */
+  --path-border-height:   1px;  /* .path-display의 border-bottom 두께 */
+  --path-margin-bottom:  30px;  /* .path-display의 margin-bottom 값 */
+  --sidebar-width:      350px;  /* 사이드바 너비 */
+  --gap:                20px;  /* 모달 주변 공통 여백 */
+}
+
+/* ─── 전체 컨테이너 & 네비게이션 바 ─── */
+.archive-container {
+  background-color: #fdf8f2;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+}
+
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: var(--header-height);
+  padding: 15px 50px;
+  background-color: #fdf8f2;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  font-size: 1.8rem;
+  font-weight: bold;
+}
+.logo .edu { color: #1B512D; }
+.logo .ve  { color: #3A973E; }
+.logo .com { color: #1B512D; }
+
+.nav-links {
+  display: flex;
+  gap: 40px;
+  align-items: center;
+  font-size: 1.2rem;
+}
+.nav-item {
+  color: #1B512D;
+  font-weight: bold;
+  cursor: pointer;
+  transition: color 0.3s;
+}
+.nav-item:hover {
+  color: #3A973E;
+}
+
+/* ─── 본문: 사이드바 + 메인 ─── */
+.archive-body {
+  display: flex;
+  flex: 1;
+  position: relative;
+  height: calc(100vh - var(--header-height)); /* 헤더 아래부터 화면 하단까지 */
+  padding-left: var(--body-padding-left);
+  padding-bottom: var(--body-padding-bottom);
+  box-sizing: border-box;
+  overflow: hidden;  /* 메인→사이드바 스크롤 전용 */
+  align-items: stretch; /* 사이드바가 상하로 꽉 차도록 */
+}
+
+/* ─── 사이드바 ─── */
+.sidebar {
+  width: var(--sidebar-width);
+  height: 100%; /* .archive-body 높이에 맞춤 */
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 16px; /* 모든 모서리 둥글게 */
+  box-sizing: border-box;
+  padding: 20px 20px 40px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  overflow-y: auto; /* 사이드바 내부 스크롤 */
+}
+
+/* ─── 사이드바 아이콘 ─── */
+.sidebar-icon {
+  width: 16px;
+  height: 16px;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+/* ─── 검색창 ─── */
+.search-wrapper {
+  position: relative;
+  width: 100%;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.archive-search {
+  width: 100%;
+  height: 36px;
+  max-width: 260px;
+  padding: 0 40px 0 12px;
+  border-radius: 18px;
+  border: 1px solid #ccc;
+  background-color: #fdf8f2;
+  color: #1B512D;
+}
+.no-results-sidebar {
+  background: #fff;
+  padding: 12px;
+  border-radius: 8px;
+  margin-top: 8px;
+  text-align: center;
+  color: #666;
+  font-size: 0.95rem;
+}
+
+.search-btn {
+  position: absolute;
+  top: 50%;
+  right: 14px;
+  transform: translateY(-50%);
+  width: 30px;
+  height: 30px;
+  border: none;
+  background-color: transparent;
+  cursor: pointer;
+}
+
+.search-btn img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.search-panel {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: #f5f5f5;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  max-height: 200px;
+  overflow-y: auto;
+  padding: 8px;
+  z-index: 100;
+}
+
+.search-item {
+  padding: 8px 12px;
+  border-bottom: 1px solid #eee;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  font-size: 0.95rem;
+}
+.search-item:hover {
+  background: #f5f5f2;
+}
+.search-item .sidebar-icon {
+  margin-right: 8px;
+}
+.search-item-text {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ─── 폴더 트리 ─── */
+.folder-tree ul {
+  list-style: none;
+  padding-left: 16px;
+  margin: 0;
+}
+.folder-tree li {
+  cursor: pointer;
+  margin: 4px 0;
+  font-size: 0.95rem;
+}
+.folder-tree li:hover {
+  text-decoration: underline;
+}
+
+/* ─── 메인 영역 ─── */
+.archive-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  /* 왼쪽 사이드바-구분선 간격: 40px에서 60px로 늘림 */
+  padding: 16px 24px 16px 60px;
+  position: relative;
+  overflow-y: auto;
+}
+
+/* ─── 경로 표시 바 (구분선) ─── */
+.path-display {
+  position: relative;
+  font-size: 1rem;
+  font-weight: bold;
+  color: #1B512D;
+  /* 아래쪽 여백 */
+  margin: 0 40px 30px 0;
+  /* 좌우 패딩 없이 전체 너비에 걸쳐 border-bottom */
+  padding: 0;
+  border-bottom: var(--path-border-height) solid #ccc;
+  box-sizing: border-box;
+}
+
+/* 경로 링크 간격 */
+.path-link {
+  cursor: pointer;
+  margin-right: 4px;
+}
+
+/* 정렬 버튼 위치 조정 (경로 표시 바로 우측) */
+.sort-toggle {
+  position: absolute;
+  top: 0;
+  right: 40px;
+  background: none;
+  border: none;
+  font-size: 0.9rem;
+  color: #1B512D;
+  cursor: pointer;
+}
+.sort-toggle:hover {
+  background: rgba(27,81,45,0.1);
+  border-radius: 4px;
+}
+
+.sort-dropdown {
+  position: absolute;
+  top: 30px;
+  right: 40px;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  display: flex;
+  flex-direction: column;
+  z-index: 1002;
+}
+.sort-dropdown button {
+  padding: 8px 12px;
+  background: none;
+  border: none;
+  text-align: left;
+  font-size: 0.95rem;
+  color: #1B512D;
+  cursor: pointer;
+}
+.sort-dropdown button:hover {
+  background-color: #f5f5f2;
+}
+
+/* ─── 폴더/파일 리스트 ─── */
+.folder-list {
+  display: flex;
+  flex-wrap: wrap;
+  /* 아이콘들이 상단 기준선에 맞추어 정렬 */
+  align-items: flex-start;
+  /* 가로 간격: 40px, 세로 간격: 80px */
+  gap: 40px 80px;
+  /* 경로 표시 바로 밑에서부터 시작 */
+  margin-top: 10px;
+  /* 왼쪽 패딩을 20px으로 줄여서 파일 아이콘을 조금 더 왼쪽으로 이동 */
+  padding-left: 20px;
+}
+
+.file-list {
+  display: flex;
+  flex-wrap: wrap;
+  /* 아이콘들이 상단 기준선에 맞추어 정렬 */
+  align-items: flex-start;
+  /* 가로 간격: 40px, 세로 간격: 80px */
+  gap: 20px 80px;
+  /* 경로 표시 바로 밑에서부터 시작 */
+  margin-top: 30px;
+  /* 왼쪽 패딩을 20px으로 줄여서 파일 아이콘을 조금 더 왼쪽으로 이동 */
+  padding-left: 15px;
+}
+
+/* ─── 개별 박스 (폴더, 파일, add) ─── */
+.folder-box,
+.file-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  /* 위쪽 여백을 없애서 아이콘이 동일 높이로 맞춰지도록 */
+  margin-top: 10px;
+}
+
+.file-box{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  margin-top: 0;
+  /* 아이콘(120px) + 양 옆 여백(2px) 정도를 고려해 너비를 고정 */
+  width: 124px;  
+  /* 텍스트가 중앙에 오도록 */
+  text-align: center;
+  gap: 10px 35px;
+}
+
+/* ─ Add 버튼 (플러스) 스타일 ─ */
+.folder-box.add-placeholder {
+  position: relative;
+  margin-top: 0; /* add 아이콘과 다른 아이콘이 같은 선상에 놓이도록 */
+  margin-left: -2px;
+}
+.folder-box.add-placeholder .folder-icon {
+  /* add 아이콘을 최상단에 배치(위쪽 여백 없음) */
+  margin: 0;
+  width: 120px !important;
+  height: 120px !important;
+}
+
+/* 드롭다운 메뉴 위치 조정 */
+.add-dropdown.under-add-placeholder {
+  position: absolute !important;
+  top: 50% !important;
+  left: 100% !important;
+  transform: translateY(-50%) !important;
+  margin-left: 8px !important;
+  white-space: nowrap !important;
+}
+.add-dropdown {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  display: flex;
+  flex-direction: column;
+  z-index: 100;
+  white-space: nowrap;
+}
+.add-dropdown button {
+  padding: 8px 12px;
+  background: none;
+  border: none;
+  text-align: left;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+.add-dropdown button:hover {
+  background: #f5f5f2;
+}
+
+/* ─── 폴더 아이콘 & 텍스트 ─── */
+.folder-icon {
+  width: 100px;
+  height: 80px;
+  object-fit: contain;
+  /* 위쪽 여백 제거 */
+  margin-top: 0;
+  /* 아이콘과 텍스트 사이 여백 */
+  margin-bottom: 12px;
+}
+
+/* ─── 파일 썸네일 & 텍스트 ─── */
+.file-thumbnail {
+  width: 110px;
+  height: 110px;
+  object-fit: cover;
+  border-radius: 4px;
+  /* 위쪽 여백 제거 */
+  margin-top: 15px;
+  /* 아이콘과 텍스트 사이 여백 */
+  margin-bottom: 12px;
+  align-items: center;
+  margin-left: -5px;
+}
+.file-name {
+  max-width: 15ch;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  /* 위쪽 여백 제거 */
+  margin-top: 0;
+  text-align: center;
+}
+
+/* ─── 파일 업로더 표시 ─── */
+.file-uploader {
+  margin-top: 2px;
+  font-size: 0.75rem;
+  color: #1B512D;
+  max-width: 120px;
+  text-align: center;
+}
+
+/* ─── PDF 미리보기 모달 ─── */
+.archive-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.2);
+  z-index: 1000;
+}
+.archive-modal-content {
+  position: fixed;
+  top: calc(
+    var(--header-height) + 20px
+    + var(--path-border-height)
+    + var(--path-margin-bottom)
+    + var(--gap)
+  );
+  height: calc(100vh 
+      - (
+          var(--header-height)
+          + 30px
+          + var(--path-border-height)
+          + var(--path-margin-bottom)
+          + var(--gap)
+        )
+      - (
+          var(--body-padding-bottom)
+          + var(--gap)
+        )
+  );
+  left: calc(
+    var(--sidebar-width)
+    + var(--body-padding-left)
+    + var(--gap)
+  );
+  right: var(--gap);
+  
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 20px;
+  z-index: 1001;
+}
+.archive-modal-content iframe {
+  flex: 1;
+  width: 100%;
+  border: none;
+}
+.archive-close-btn {
+  align-self: flex-end;
+  margin-top: 12px;
+  padding: 6px 12px;
+  background: #1B512D;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  z-index: 1002;
+}
+.archive-close-btn:hover {
+  background: #3A973E;
+}
+
+/* ─── 컨텍스트 메뉴 ─── */
+.context-menu {
+  position: absolute;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  z-index: 2000;
+}
+.context-menu button {
+  display: block;
+  width: 100%;
+  padding: 8px 12px;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  color: #1B512D;
+  font-size: 0.95rem;
+  white-space: nowrap;
+}
+.context-menu button:hover {
+  background: #f5f5f2;
+}
+
+.sidebar ul,
+.folder-tree,
+.folder-tree ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.sidebar li,
+.folder-tree li {
+  list-style: none;
+}

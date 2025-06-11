@@ -1,0 +1,166 @@
+.student-signup-container {
+    text-align: center;
+    background-color: #fdf6f0;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+  
+.title {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: #1B512D;
+    margin-bottom: 5px;
+}
+  
+.edu {
+    color: #1B512D;
+}
+  
+.ve {
+    color: #3A973E;
+}
+.com{
+    color: #1B512D;
+}
+
+/* "학생 회원가입"과 부모 컨테이너 사이 간격 */
+h2 {
+    color: #1B512D;
+    margin-bottom: 80px;
+}
+  
+/* 폼 스타일 */
+.signup-form {
+    background: white;
+    padding: 40px;
+    border-radius: 10px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+    width: 650px;
+}
+  
+.input-group {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start; /* 라벨과 입력 칸 정렬 */
+    margin-bottom: 20px; /* 입력 칸과 다음 입력 칸 사이 간격 */
+    width: 100%;
+}
+  
+.input-group label {
+    font-size: 0.9rem;
+    color: #333;
+    width: 120px; /* 라벨 크기 고정 */
+    text-align: left;
+    flex-shrink: 0;
+}
+
+/* 입력 필드 공통 스타일 */
+.input-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+}
+
+/* 모든 입력 칸 크기 동일하게 */
+.input-container input {
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 0.9rem;
+    width: 400px;
+}
+
+/* 입력 필드 클릭 시 (포커스 시) 테두리 색 변경 */
+.input-container input:focus {
+    border-color: #1B512D; /* 테두리 색 변경 */
+    outline: 1px solid #1B512D; /* 포커스 테두리 추가 */
+}
+
+/* 버튼이 있는 경우에도 동일한 입력칸 너비 유지 */
+.input-container.with-button {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+}
+
+.input-container.with-button input {
+    width: 400px;
+}
+
+/* 버튼 스타일 */
+.input-group button {
+    background-color: white;
+    color: #1B512D;
+    border: 1px solid #1B512D;
+    padding: 0;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    flex-shrink: 0;
+    width: 100px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.input-group button:hover {
+    background-color: #1B512D;
+    color: white;
+}
+
+/* 가입하기 버튼 */
+.submit-btn {
+    background-color: #CDD6A2;
+    color: black;
+    border: none;
+    padding: 12px;
+    width: 200px; 
+    border-radius: 20px;
+    font-size: 1rem;
+    cursor: pointer;
+    margin-top: 30px; /* 학원 코드와 가입하기 버튼 사이의 간격 */
+}
+
+.submit-btn:hover {
+    background-color: #CDD6A2;
+}
+
+/* 로그인 링크 */
+.login-link {
+    margin-top: 10px;
+    font-size: 0.9rem;
+    color: #333;
+}
+
+.login-link a {
+    color: #1B512D;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.login-link a:hover {
+    text-decoration: underline;
+}
+
+.required {
+    color: red;
+    margin-left: 3px;
+}
+
+.login-button {
+    color: #1B512D;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.login-button:hover {
+    text-decoration: underline;
+}
+
