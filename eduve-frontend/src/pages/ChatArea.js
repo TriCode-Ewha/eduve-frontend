@@ -327,48 +327,19 @@ const ChatArea = ({ messages, setMessages, username }) => {
 
       {/* PDF 미리보기 모달 */}
       {previewPdfUrl && (
-        <div
-          className="modal-overlay"
-          onClick={closePdfPreview}
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0,0,0,0.6)',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            zIndex: 9999,
-          }}
-        >
-          <div
-            className="modal-content"
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              width: '85vw',
-              height: '80vh',
-              backgroundColor: 'white',
-              borderRadius: 8,
-              position: 'relative',
-              padding: 10,
-              boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-            }}
-          >
-            <button
-              onClick={closePdfPreview}
-              style={{ position: 'absolute', top: 10, right: 10, cursor: 'pointer' }}
-            >
-              닫기
-            </button>
+        <div className="chat-modal-overlay" onClick={closePdfPreview}>
+          <div className="chat-modal-content" onClick={e => e.stopPropagation()}>
             <iframe
               src={previewPdfUrl}
               title="PDF Preview"
-              width="100%"
-              height="90%"
-              style={{ border: 'none' }}
+              className="chat-modal-iframe"
             />
+            <button
+              className="chat-modal-close-btn"
+              onClick={closePdfPreview}
+            >
+              닫기
+            </button>
           </div>
         </div>
       )}
