@@ -12,7 +12,14 @@ import {
 } from '../api/fileApi';
 import { v4 as uuidv4 } from 'uuid';
 import { jwtDecode } from 'jwt-decode';
+import { SyncLoader } from 'react-spinners';
 import './ArchivePage.css';
+
+export const GreenLoading = () => (
+  <>
+    <SyncLoader color="#1B512D" />
+  </>
+);
 
 export default function ArchivePage() {
   const navigate = useNavigate();
