@@ -57,10 +57,15 @@ const ChatArea = ({ messages, setMessages, username }) => {
   const [graphMode, setGraphMode] = useState(false); // 그래프 모드 여부
   const graphBtnRef = useRef(null);
   const [hoverGraphBtn, setHoverGraphBtn] = useState(false);
+  const [urlMode, setUrlMode] = useState(false); // ★ URL 모드 추가
+  const urlBtnRef = useRef(null);
+  const [hoverUrlBtn, setHoverUrlBtn] = useState(false);
 
   const toggleGraphMode = () => {
     setGraphMode(prev => !prev);
   };
+  const toggleUrlMode = () => setUrlMode(prev => !prev); // ★ URL 모드 토글
+
 
   // 초기 메시지 설정
   useEffect(() => {
@@ -166,9 +171,10 @@ const ChatArea = ({ messages, setMessages, username }) => {
     // 백엔드 요청
     try {
       const graphParam = graphMode ? 1 : 0;
+      const urlParam = urlMode ? 1 : 0;
       
       const res = await axiosInstance.post(
-        `/chat/start/${userId}?graph=${graphParam}`, // ← 쿼리 파라미터 추가됨
+        `/chat/start/${userId}?graph=${graphParam}&url=${urlParam}`, // ← 쿼리 파라미터 추가됨
         { question },
         {
           headers: {
@@ -306,6 +312,22 @@ const ChatArea = ({ messages, setMessages, username }) => {
 
             <TooltipPortal targetRef={graphBtnRef} visible={hoverGraphBtn}>
               그래프/표를 분석하고 싶으면 여기를 누르세요!
+            </TooltipPortal>
+
+            {/* URL Mode 버튼 ★ */}
+            <div className="tooltip-wrapper" style={{ marginLeft: '1px' }}>
+              <button
+                ref={urlBtnRef}
+                className={`graph-toggle-btn ${urlMode ? 'active' : ''}`}
+                onClick={toggleUrlMode}
+                onMouseEnter={() => setHoverUrlBtn(true)}
+                onMouseLeave={() => setHoverUrlBtn(false)}
+              >
+                🔗
+              </button>
+            </div>
+            <TooltipPortal targetRef={urlBtnRef} visible={hoverUrlBtn}>
+              파일의 URL도 함께 답변받고 싶다면 여기를 누르세요!
             </TooltipPortal>
             
 
