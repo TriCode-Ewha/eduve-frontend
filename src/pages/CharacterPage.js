@@ -15,6 +15,7 @@ const CharacterPage = () => {
   const [selectedIdx, setSelectedIdx] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
   const [customName, setCustomName] = useState("");
+  const [showSaved, setShowSaved] = useState(false);
   const rangeRef = useRef(null);
 
   const characterList = [
@@ -130,14 +131,20 @@ const CharacterPage = () => {
       descriptionLevel: levelMap[level],
     }, token)
       .then(() => {
-        alert("캐릭터 설정이 저장되었습니다.");
+        setShowSaved(true);
         setCustomName(customName || selectedCharacter.name);
+        setTimeout(()=> setShowSaved(false),2000);
       })
       .catch((err) => console.error("저장 실패:", err));
   };
 
   return (
     <div className="character-page-container">
+      {showSaved && (
+        <div className="save-notification">
+          저장되었습니다
+        </div>
+      )}
       <nav className="navbar">
         <h1 className="logo" onClick={() => navigate("/")} style={{ cursor: "pointer" }}>
           <span className="edu">Edu</span>
@@ -156,10 +163,10 @@ const CharacterPage = () => {
               {menuOpen && (
                 <div className="user-dropdown">
                   <button>
-                    <span className="icon">⚙️</span> 설정
+                    <span className="icon"></span> 설정
                   </button>
                   <button onClick={handleLogout}>
-                    <span className="icon">🚪</span> 로그아웃
+                    <span className="icon"></span> 로그아웃
                   </button>
                 </div>
               )}

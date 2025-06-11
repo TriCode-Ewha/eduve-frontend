@@ -14,18 +14,17 @@
   padding: 15px 50px;
   background-color: #fdf8f2;
 }
+
 .logo {
+  display: flex;
+  align-items: center;
   font-size: 1.8rem;
   font-weight: bold;
-  color: #1b512d;
 }
-.logo span.edu,
-.logo span.com {
-  color: #1B512D !important;
-}
-.logo span.ve {
-  color: #3A973E !important;
-}
+.logo .edu { color: #1B512D; }
+.logo .ve  { color: #3A973E; }
+.logo .com { color: #1B512D; }
+
 .nav-links {
   display: flex;
   gap: 80px;

@@ -242,3 +242,94 @@
     padding-bottom: 40px !important; /* 하단 여백 */
 }
   
+
+/* 저장 알림 토스트 */
+.save-notification {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.75);
+  color: #fff;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 1rem;
+  z-index: 10000;
+  opacity: 0;
+  animation: fadeInOut 2s forwards;
+}
+
+.graph-toggle-btn {
+    background-color: #ffffff;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    color: #333;
+    transition: background-color 0.2s ease;
+}
+  
+.graph-toggle-btn:hover {
+    background-color: #f0f0f0;
+}
+  
+.graph-toggle-btn.active {
+    background-color: #F8E1DE;
+    border-color: #f9d1cc;
+    color: #1b512d;
+}
+
+.tooltip-wrapper {
+    position: relative;
+    display: inline-block;
+  }
+  
+  /* 툴팁 텍스트 기본 상태 - 숨김 */
+.tooltip-text {
+  visibility: hidden;
+  width: 230px;
+  background-color: rgba(119, 119, 119, 0.75);
+  color: #fff;
+  text-align: center;
+  padding: 8px 12px;
+  border-radius: 6px;
+
+  position: absolute;
+  top: 50%; 
+  left: calc(100% + 35px); /* 아이콘(wrapper) 오른쪽으로 6px 떨어진 위치 */
+  transform: translateY(-80%);
+
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  z-index: 100;
+  font-size: 0.65rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+/* 화살표를 툴팁 왼쪽 중앙에서 아이콘을 가리키도록 설정 */
+.tooltip-text::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: -6px; /* 툴팁 박스의 왼쪽 끝에서 6px 만큼 왼쪽 */
+  transform: translateY(-50%);
+  border-width: 6px;
+  border-style: solid;
+  border-color: transparent rgba(119, 119, 119, 0.75) transparent transparent;
+}
+
+/* 마우스 오버 시 툴팁 보이기 */
+.tooltip-wrapper:hover .tooltip-text {
+  visibility: visible;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+@keyframes fadeInOut {
+  0%   { opacity: 0; }
+  10%  { opacity: 1; }
+  90%  { opacity: 1; }
+  100% { opacity: 0; }
+}

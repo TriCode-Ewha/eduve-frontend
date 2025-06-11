@@ -8,6 +8,7 @@ import './ChatArea.css';
 
 import SimpleBar from 'simplebar-react';
 import 'simplebar-react/dist/simplebar.min.css';
+import TooltipPortal from '../TooltipPortal';
 
 // 마크다운 커스텀 컴포넌트
 const markdownComponents = {
@@ -49,9 +50,22 @@ const markdownComponents = {
 const ChatArea = ({ messages, setMessages, username }) => {
   const [input, setInput] = useState(''); // 입력창 상태
   const [liked, setLiked] = useState({}); // 좋아요 상태
+  const [showSaved, setShowSaved] = useState(false); // 알림 표시 여부부
   const [previewPdfUrl, setPreviewPdfUrl] = useState(null);
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef(null);
+  const [graphMode, setGraphMode] = useState(false); // 그래프 모드 여부
+  const graphBtnRef = useRef(null);
+  const [hoverGraphBtn, setHoverGraphBtn] = useState(false);
+  const [urlMode, setUrlMode] = useState(false); // ★ URL 모드 추가
+  const urlBtnRef = useRef(null);
+  const [hoverUrlBtn, setHoverUrlBtn] = useState(false);
+
+  const toggleGraphMode = () => {
+    setGraphMode(prev => !prev);
+  };
+  const toggleUrlMode = () => setUrlMode(prev => !prev); // ★ URL 모드 토글
+
 
   // 초기 메시지 설정
   useEffect(() => {
@@ -115,6 +129,10 @@ const ChatArea = ({ messages, setMessages, username }) => {
         [messageId]: !isLiked
       }));
 
+      //저장 알림
+      setShowSaved(true);
+      setTimeout(() => setShowSaved(false), 2000);
+
     } catch (err) {
       console.error('좋아요 처리 실패:', err.response?.data || err.message);
       if (err.response) {
@@ -152,8 +170,11 @@ const ChatArea = ({ messages, setMessages, username }) => {
 
     // 백엔드 요청
     try {
+      const graphParam = graphMode ? 1 : 0;
+      const urlParam = urlMode ? 1 : 0;
+      
       const res = await axiosInstance.post(
-        `/chat/start/${userId}`, 
+        `/chat/start/${userId}?graph=${graphParam}&url=${urlParam}`, // ← 쿼리 파라미터 추가됨
         { question },
         {
           headers: {
@@ -162,15 +183,15 @@ const ChatArea = ({ messages, setMessages, username }) => {
         }
       );
       
-      const { botMessage, fileNameAndUrl } = res.data;
+      const { botMessage, fileInfo } = res.data;
       let filePreview = null;
 
       // fileNameAndUrl이 있을 때만 filePreview 설정
-      if (fileNameAndUrl && fileNameAndUrl.length === 3) {
+      if (fileInfo && fileInfo.fileUrl) {
         filePreview = {
-          url: fileNameAndUrl[2],
-          page: parseInt(fileNameAndUrl[1], 10) || 1,
-          title: fileNameAndUrl[0],
+          url: fileInfo.fileUrl,
+          page: parseInt(fileInfo.page, 10) || 1,
+          title: fileInfo.fileName,
         };
       }
       
@@ -203,6 +224,11 @@ const ChatArea = ({ messages, setMessages, username }) => {
 
   return (
     <>
+      {showSaved &&(
+        <div className="save-notification">
+          저장되었습니다
+        </div>
+      )}
       <div className="chat-area-inner">
         <SimpleBar
           style={{ 
@@ -222,12 +248,19 @@ const ChatArea = ({ messages, setMessages, username }) => {
                 {msg.text.split('\n\n').map((paragraph, idx) => (<ReactMarkdown key={idx} components={markdownComponents}>{paragraph}</ReactMarkdown>))}
 
                 {!msg.userMessage && !msg.isInitialMessage && (
-                  <img
-                    src={liked[msg.messageId || msg.id] ? '/heart.png' : '/heart_empty.png'}
-                    alt="thumbs up"
-                    className="thumb-icon"
-                    onClick={() => toggleLike(msg.messageId || msg.id, liked[msg.messageId || msg.id])}
-                  />
+                  <div className="tooltip-wrapper">
+                    <img
+                      src={liked[msg.messageId || msg.id] ? '/heart.png' : '/heart_empty.png'}
+                      alt="좋아요"
+                      className="thumb-icon"
+                      onClick={() =>
+                        toggleLike(msg.messageId || msg.id, liked[msg.messageId || msg.id])
+                      }
+                    />
+                    <span className="tooltip-text">
+                      좋아요 버튼을 누르면 계속 이 스타일로 답변됩니다!
+                    </span>
+                  </div>
                 )}
 
                 {/* PDF 링크로 변경 */}
@@ -264,12 +297,46 @@ const ChatArea = ({ messages, setMessages, username }) => {
         <div className="chat-input-wrapper">
           <div className="chat-input-separator" />
           <div className="chat-input-box">
+    
+            <div className="tooltip-wrapper">
+              <button
+                ref={graphBtnRef}
+                className={`graph-toggle-btn ${graphMode ? 'active' : ''}`}
+                onClick={toggleGraphMode}
+                onMouseEnter={() => setHoverGraphBtn(true)}
+                onMouseLeave={() => setHoverGraphBtn(false)}
+              >
+                📈
+              </button>
+            </div>
+
+            <TooltipPortal targetRef={graphBtnRef} visible={hoverGraphBtn}>
+              그래프/표를 분석하고 싶으면 여기를 누르세요!
+            </TooltipPortal>
+
+            {/* URL Mode 버튼 ★ */}
+            <div className="tooltip-wrapper" style={{ marginLeft: '1px' }}>
+              <button
+                ref={urlBtnRef}
+                className={`graph-toggle-btn ${urlMode ? 'active' : ''}`}
+                onClick={toggleUrlMode}
+                onMouseEnter={() => setHoverUrlBtn(true)}
+                onMouseLeave={() => setHoverUrlBtn(false)}
+              >
+                🔗
+              </button>
+            </div>
+            <TooltipPortal targetRef={urlBtnRef} visible={hoverUrlBtn}>
+              파일의 URL도 함께 답변받고 싶다면 여기를 누르세요!
+            </TooltipPortal>
+            
+
             <input
               className="chat-input"
               value={input}
               onChange={e => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="질문을 입력하세요..."
+              placeholder={graphMode ? "그래프/표 인식 모드로 질문 중..." : "질문을 입력하세요..."}
             />
             <button className="chat-send-btn" onClick={handleSend}>
               전송

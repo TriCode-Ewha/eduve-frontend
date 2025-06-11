@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import { login } from "../api/LoginApi";
 import "./Login.css";
 
 const Login = () => {
@@ -14,13 +14,7 @@ const Login = () => {
     setError("");
 
     try {
-      const response = await axios.post(`http://15.165.205.11:8080/login`,null, {
-        params: {
-          username,
-          password
-        }
-      });
-
+      const response = await login({ username, password});
       const token = response.data.token;
 
       const userId = response.data.userId;
