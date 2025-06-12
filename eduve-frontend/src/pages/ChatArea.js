@@ -155,6 +155,8 @@ const ChatArea = ({ messages, setMessages, username }) => {
     const question = input;
     setInput('');
 
+    const t0=performance.now();
+
     // 사용자 메시지 즉시 표시
     setMessages(prev => [...prev, {
       sender: 'user',
@@ -176,6 +178,10 @@ const ChatArea = ({ messages, setMessages, username }) => {
           }
         }
       );
+
+      const t1=performance.now();
+      const latencyMs=t1-t0;
+      console.log(`⚡ 응답 시간: ${latencyMs.toFixed(1)} ms`);
       
       const { botMessage, fileInfo } = res.data;
       let filePreview = null;
