@@ -13,9 +13,13 @@ import {
 import { v4 as uuidv4 } from 'uuid';
 import { jwtDecode } from 'jwt-decode';
 import './ArchivePage.css';
+import ClipLoader from "react-spinners/ClipLoader";
 
 export default function ArchivePage() {
   const navigate = useNavigate();
+
+  // 로딩 스피너 
+  const [isLoading, setIsLoading] = useState(false);
 
   // — 사용자 & 메뉴 상태
   const [username, setUsername] = useState('');
@@ -257,10 +261,15 @@ export default function ArchivePage() {
     }
   }, [newFolderName, currentPath, folders]);
 
+  
   // — 파일 업로드 핸들러 (현재 위치에 파일 업로드)
+
   const handleFileSelect = async e => {
     const file = e.target.files[0];
     if (!file) return;
+
+    setIsLoading(true); // 로딩 시작
+    
     let userId, uploader;
     try {
       const token = localStorage.getItem('token');
@@ -309,9 +318,11 @@ export default function ArchivePage() {
       console.error('파일 업로드 실패', err);
       alert('파일 업로드에 실패했습니다.');
     } finally {
+      setIsLoading(false); // 로딩 끝
       setAddMenuOpen(false);
     }
   };
+
 
   // — PDF 미리보기
   const handleFileDoubleClick = file =>
@@ -630,7 +641,7 @@ export default function ArchivePage() {
             id="file-upload"
             type="file"
             style={{ display: 'none' }}
-            onChange={handleFileSelect}
+            onChange={handleFileSelect} 
           />
 
           {/* 메인: 현재 경로에 속한 “파일” 목록 */}
