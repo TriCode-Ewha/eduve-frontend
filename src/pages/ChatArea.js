@@ -66,6 +66,8 @@ const ChatArea = ({ messages, setMessages, username }) => {
   };
   const toggleUrlMode = () => setUrlMode(prev => !prev); // ★ URL 모드 토글
 
+  const [isLoading, setIsLoading] = useState(false);
+  const [answer, setAnswer] = useState(null);
 
   // 초기 메시지 설정
   useEffect(() => {
@@ -156,6 +158,8 @@ const ChatArea = ({ messages, setMessages, username }) => {
   // 전송 처리
   const handleSend = async () => {
     if (!input.trim()) return;
+
+    setLoading(true); // 로딩스피너 시작
     
     const question = input;
     setInput('');
@@ -211,6 +215,8 @@ const ChatArea = ({ messages, setMessages, username }) => {
         ...prev,
         { sender: '잭슨', text: '질문 처리 중 오류가 발생했어요 😢' }
       ]);
+    } finally {
+    setLoading(false);  // 로딩 스피너 종료
     }
   };
 
@@ -226,7 +232,7 @@ const ChatArea = ({ messages, setMessages, username }) => {
     <>
       {showSaved &&(
         <div className="save-notification">
-          저장되었습니다
+          답변 선호도가 반영되었습니다!
         </div>
       )}
       <div className="chat-area-inner">
@@ -291,6 +297,18 @@ const ChatArea = ({ messages, setMessages, username }) => {
               </div>
             </div>
           ))}
+
+          {loading && messages[messages.length - 1]?.userMessage && (
+            <div className="chat-message-wrapper">
+              <div className="chat-message message-jackson">
+                <div className="typing-text">
+                  생각중... 🤔
+                  <span className="cursor" />
+                </div>
+              </div>
+            </div>
+          )}
+
           <div ref={messagesEndRef} />
         </SimpleBar>
 
