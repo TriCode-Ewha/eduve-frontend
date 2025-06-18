@@ -8,7 +8,8 @@ import {
   renameFile,
   createFolder,
   fetchUserFolders,
-  fetchFolderContents
+  fetchFolderContents,
+  moveFile
 } from '../api/fileApi';
 import { v4 as uuidv4 } from 'uuid';
 import { jwtDecode } from 'jwt-decode';
@@ -40,10 +41,17 @@ export default function ArchivePage() {
   const [files, setFiles] = useState([]);
   const [currentPath, setCurrentPath] = useState([]);
   const [previewFileUrl, setPreviewFileUrl] = useState(null);
+  // import 하단부나 useEffect 위쪽에 추가
+  const [dropdownOpenId, setDropdownOpenId] = useState(null);
 
   // — 현재 로그인된 user 정보 (userId, role)
   const [currentUserId, setCurrentUserId] = useState(null);
   const [currentUserRole, setCurrentUserRole] = useState(null);
+
+  // — 이름 변경 모달 상태
+  const [renameModalOpen, setRenameModalOpen] = useState(false);
+  const [renameTargetFile, setRenameTargetFile] = useState(null);
+  const [renameInput, setRenameInput] = useState('');
 
   // — 사이드바 트리 확장 상태
   const [expandedPaths, setExpandedPaths] = useState([]);
@@ -55,6 +63,35 @@ export default function ArchivePage() {
     );
   };
   const isExpanded = pathKey => expandedPaths.includes(pathKey);
+
+  // — 이름 변경 모달 토글
+  const handleRenameClick = file => {
+    setRenameTargetFile(file);
+    setRenameInput(file.name);
+    setRenameModalOpen(true);
+    setDropdownOpenId(null);
+  };
+
+  // — 이름 변경 확인
+  const confirmRename = async () => {
+    if (!renameInput || renameInput === renameTargetFile.name) {
+      setRenameModalOpen(false);
+      return;
+    }
+    try {
+      const res = await renameFile(renameTargetFile.id, renameInput);
+      const updated = res.data;
+      const next = files.map(f =>
+        f.id === updated.fileId ? { ...f, name: updated.fileName } : f
+      );
+      setFiles(next);
+      localStorage.setItem('files', JSON.stringify(next));
+    } catch (err) {
+      alert('이름 변경 실패');
+    } finally {
+      setRenameModalOpen(false);
+    }
+  };
 
   // — 컴포넌트 마운트 시: localStorage → state로 불러오기 + 토큰 디코딩
   useEffect(() => {
@@ -89,6 +126,17 @@ export default function ArchivePage() {
     }
   }, []);
 
+  // 캐시 초기화: currentUserId가 바뀌면 로컬스토리지와 state 비우기
+  useEffect(() => {
+    if (!currentUserId) return;
+
+    localStorage.removeItem('folders');
+    localStorage.removeItem('files');
+    setFolders([]);
+    setFiles([]);
+  }, [currentUserId]);
+
+
   // — **API 호출: 현재 userId가 세팅되면 최상위 폴더 목록 불러오기**
   useEffect(() => {
     if (!currentUserId) return;
@@ -96,9 +144,11 @@ export default function ArchivePage() {
     // (A) 최상위 폴더 목록
     fetchUserFolders(currentUserId, null)
       .then(res => {
-        const fetchedFolders = res.data.map(f => ({
-          id: f.id,
-          name: f.name,
+        const fetchedFolders = res.data
+        .filter(item => item.type === 'folder')
+        .map(f => ({
+          id: f.folderId,
+          name: f.folderName,
           path: []
         }));
 
@@ -122,33 +172,40 @@ export default function ArchivePage() {
     (async () => {
       try {
         const res2 = await fetchFolderContents(currentUserId, null, null);
-        const rootFiles = res2.data.files || [];
+    
+        // 응답에서 파일만 필터링
+        const rootFiles = res2.data.filter(item => item.type === 'file');
+    
         const mapped = rootFiles.map(ff => ({
           id:           ff.fileId,
           name:         ff.fileName,
-          path:         [], // 홈이므로 path 빈 배열
+          path:         [],
           fileUrl:      ff.fileUrl,
           uploaderId:   ff.userId,
           uploaderRole: ff.role,
-          uploaderName: ff.username
+          uploaderName: ff.username,
         }));
-
+    
         let existingFiles = [];
-        try{
-          existingFiles =JSON.parse(localStorage.getItem('files')) || [];
-        } catch { existingFiles = [];}
-
-        const mergedFiles =[
+        try {
+          existingFiles = JSON.parse(localStorage.getItem('files')) || [];
+        } catch {
+          existingFiles = [];
+        }
+    
+        const mergedFiles = [
           ...existingFiles,
           ...mapped.filter(fNew =>
-            !existingFiles.some(e=>e.id===fNew.id)
+            !existingFiles.some(e => e.id === fNew.id)
           )
         ];
-
-        if(sortOrder === 'name'){
-          mergedFiles.sort((a,b)=>
-          a.name.localCompare(b.name,'ko'));
+    
+        if (sortOrder === 'name') {
+          mergedFiles.sort((a, b) =>
+            a.name.localeCompare(b.name, 'ko')
+          );
         }
+    
         setFiles(mergedFiles);
         localStorage.setItem('files', JSON.stringify(mergedFiles));
       } catch (err) {
@@ -639,19 +696,60 @@ export default function ArchivePage() {
               <div className="no-results"></div>
             )}
             {sortedFiles.map(file => (
-              <div
-                key={file.id}
-                className="file-box"
-                onDoubleClick={() => handleFileDoubleClick(file)}
-                onContextMenu={e => {
-                  e.preventDefault();
-                  const action = window.confirm('이름 변경: OK, 삭제: Cancel') ? 'rename' : 'delete';
-                  if (action === 'rename') handleRenameFile(file);
-                  else handleDeleteFile(file.id);
-                }}
-              >
+              <div key={file.id} className="file-box" >
                 <img src="/pdf-thumbnail.png" className="file-thumbnail" alt="file" />
-                <div className="file-name">{file.name}</div>
+
+                <div className="file-name-with-toggle">
+                  <div className="file-name">{file.name}</div>
+
+                  <div className="file-actions">
+                  <button
+                    className="dropdown-toggle clean-toggle"
+                    onClick={() =>
+                      setDropdownOpenId(dropdownOpenId === file.id ? null : file.id)
+                    }
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      padding: 0,
+                      marginLeft: '6px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                    }}
+                    aria-label="더보기"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      strokeWidth={1.5}
+                      stroke="currentColor"
+                      style={{
+                        width: '18px',
+                        height: '18px',
+                        color: '#444',
+                      }}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M19.5 8.25l-7.5 7.5-7.5-7.5"
+                      />
+                    </svg>
+                  </button>
+
+
+                    {dropdownOpenId === file.id && (
+                      <div className="dropdown-menu">
+                        <button onClick={() => handleRenameClick(file)}> 이름 변경</button>
+                        <button onClick={() => moveFile(file.id, null)}> 이동</button>
+                        <button onClick={() => handleDeleteFile(file.id)}> 삭제</button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
                 <div className="file-uploader">
                   {file.uploaderName}님 업로드
                 </div>
@@ -665,6 +763,25 @@ export default function ArchivePage() {
               <div className="archive-modal-content" onClick={e => e.stopPropagation()}>
                 <iframe src={previewFileUrl} title="PDF Preview" style={{ border: 'none' }} />
                 <button className="archive-close-btn" onClick={closePreview}>닫기</button>
+              </div>
+            </div>
+          )}
+
+
+          {/* ✅ 이름 변경 모달 추가 위치 */}
+          {renameModalOpen && (
+            <div className="modal-overlay" onClick={() => setRenameModalOpen(false)}>
+              <div className="modal-content" onClick={e => e.stopPropagation()}>
+                <h3>이름 변경</h3>
+                <input
+                  className="rename-input"
+                  value={renameInput}
+                  onChange={e => setRenameInput(e.target.value)}
+                />
+                <div className="modal-actions">
+                  <button onClick={confirmRename}>확인</button>
+                  <button onClick={() => setRenameModalOpen(false)}>취소</button>
+                </div>
               </div>
             </div>
           )}

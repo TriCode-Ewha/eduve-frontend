@@ -30,7 +30,7 @@ export const fetchFile = fileId =>
 export const renameFile = (fileId, newName) =>
   axiosInstance.patch(
     `/resources/file/${fileId}/rename`,
-    { name: newName }
+    { newName }
   );
 
 /**
@@ -87,7 +87,7 @@ export const fetchFolderContents = (userId, folderId, sort = null) => {
   const query = sort ? `?sort=${encodeURIComponent(sort)}` : '';
   if (folderId == null) {
     // parentId 없이 최상위(홈) 경로 조회
-    return axiosInstance.get(`/folders/user/${userId}/folder${query}`);
+    return axiosInstance.get(`/folders/user/${userId}${query}`);
   } else {
     // 특정 하위 폴더를 지정해서 조회
     return axiosInstance.get(`/folders/user/${userId}/folder/${folderId}${query}`);
