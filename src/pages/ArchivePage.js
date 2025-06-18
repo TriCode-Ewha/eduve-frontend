@@ -465,6 +465,37 @@ export default function ArchivePage() {
 
   return (
     <div className="archive-container">
+
+      {/* 로딩 스피너 */}
+      {isLoading && (
+        <div style={{
+          position: 'fixed',
+          top: 0, left: 0, width: '100%', height: '100%',
+          backgroundColor: 'rgba(255, 255, 255, 0.6)',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 9999
+        }}>
+          <ClipLoader color="#36d7b7" size={60} />
+          <div className="typing-container">
+            <p
+              className="typing-text"
+              style={{
+                backgroundColor: 'white',
+                padding: '4px 12px',
+                borderRadius: '6px',
+                boxShadow: '0 2px 6px rgba(0,0,0,0.1)'
+              }}
+            >
+              학습 자료를 업로드 중이에요. 조금만 기다려주세요!! 🤓
+            </p>
+          </div>
+        </div>
+      )}
+
+
       {/* 네비게이션 바 */}
       <nav className="navbar">
         <h1 className="logo" onClick={() => navigate('/')}>
@@ -682,5 +713,6 @@ export default function ArchivePage() {
         </main>
       </div>
     </div>
+
   );
 }

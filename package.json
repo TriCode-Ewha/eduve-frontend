@@ -2,7 +2,7 @@
   "name": "eduve_fe",
   "version": "0.1.0",
   "private": true,
-  "proxy": "http://15.164.97.117:8080",
+  "proxy": "https://api.eduve.r-e.kr",
   "dependencies": {
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",

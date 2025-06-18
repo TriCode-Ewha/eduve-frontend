@@ -504,3 +504,32 @@
 .folder-tree li {
   list-style: none;
 }
+
+.typing-container {
+  margin-top: 20px;
+  width: fit-content;
+}
+
+.typing-text {
+  font-size: 18px;
+  font-weight: 500;
+  color: #333;
+  white-space: nowrap;
+  overflow: hidden;
+  border-right: 2px solid #36d7b7;
+  animation:
+    typing 3.5s steps(40, end) forwards,
+    blink 0.75s step-end infinite;
+}
+
+/* 타이핑 효과 */
+@keyframes typing {
+  from { width: 0 }
+  to { width: 100% }
+}
+
+/* 깜빡이는 커서 */
+@keyframes blink {
+  0%, 100% { border-color: transparent }
+  50% { border-color: #36d7b7 }
+}
