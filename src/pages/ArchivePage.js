@@ -79,21 +79,42 @@ export default function ArchivePage() {
 
   const handleMoveClick = async (fileId) => {
     setMoveTargetFileId(fileId);
-    setMoveFolderStack([]); // 탐색 경로 초기화
     setFileMoveModalOpen(true);
-    await loadMoveFolderContents(null); // 루트에서 시작
+    await loadMoveFolderContents(null, true); // 루트 진입임을 명시적으로 전달
   };
+  
 
-  const loadMoveFolderContents = async (folderId) => {
+  const loadMoveFolderContents = async (folderId, isRoot = false) => {
     try {
       const res = await fetchFolderContents(currentUserId, folderId ?? null, 'name');
-      const foldersOnly = (Array.isArray(res.data) ? res.data : []).filter(item => item.type === 'folder');
+  
+      let foldersOnly = [];
+  
+      if (Array.isArray(res.data)) {
+        // 최상위 폴더 목록
+        foldersOnly = res.data.filter(item => item.type === 'folder');
+      } else if (res.data.subFolders) {
+        foldersOnly = res.data.subFolders;
+      }
+  
       setMoveFolders(foldersOnly);
       setMoveCurrentFolderId(folderId ?? null);
+  
+      if (isRoot || folderId === null) {
+        setMoveFolderStack([]); // 루트에서는 스택 초기화
+      } else if (res.data.folderName && res.data.folderId) {
+        setMoveFolderStack(prev => [...prev, {
+          id: res.data.folderId,
+          name: res.data.folderName
+        }]);
+      }
+  
     } catch (err) {
       console.error('폴더 불러오기 실패', err);
+      setMoveFolders([]); // fallback
     }
   };
+  
 
   const confirmFileMove = async (targetFolderId) => {
     if (!moveTargetFileId || targetFolderId == null) return;
@@ -864,39 +885,58 @@ export default function ArchivePage() {
                 <h3>이동할 폴더 선택</h3>
                 
                 <ul className="folder-selection-list">
-                  {moveFolders.map(folder => (
-                    <li key={folder.folderId} className="folder-item">
-                      <div
-                        onClick={() => {
-                          setMoveFolderStack(prev => [...prev, {
-                            id: folder.folderId,
-                            name: folder.folderName
-                          }]);
-                          loadMoveFolderContents(folder.folderId);
-                        }}
-                        className="folder-name-clickable folder-flex-row"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="move-folder-icon" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 9.776c.112-.017.227-.026.344-.026h15.812c.117 0 .232.009.344.026m-16.5 0a2.25 2.25 0 0 0-1.883 2.542l.857 6a2.25 2.25 0 0 0 2.227 1.932H19.05a2.25 2.25 0 0 0 2.227-1.932l.857-6a2.25 2.25 0 0 0-1.883-2.542m-16.5 0V6A2.25 2.25 0 0 1 6 3.75h3.879a1.5 1.5 0 0 1 1.06.44l2.122 2.12a1.5 1.5 0 0 0 1.06.44H18A2.25 2.25 0 0 1 20.25 9v.776" />
-                        </svg>
-                        <span>{folder.folderName}</span>
-                      </div>
-                      <button
-                        className="move-confirm-btn"
-                        onClick={() => confirmFileMove(folder.folderId)}
-                      >
-                        이동
-                      </button>
-                    </li>
-                  ))}
+                  {moveFolders.length > 0 ? (
+                    moveFolders.map(folder => (
+                      <li key={folder.folderId} className="folder-item">
+                        <div
+                          onClick={() => loadMoveFolderContents(folder.folderId)}
+                          className="folder-name-clickable folder-flex-row"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="move-folder-icon" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 9.776c.112-.017.227-.026.344-.026h15.812c.117 0 .232.009.344.026m-16.5 0a2.25 2.25 0 0 0-1.883 2.542l.857 6a2.25 2.25 0 0 0 2.227 1.932H19.05a2.25 2.25 0 0 0 2.227-1.932l.857-6a2.25 2.25 0 0 0-1.883-2.542m-16.5 0V6A2.25 2.25 0 0 1 6 3.75h3.879a1.5 1.5 0 0 1 1.06.44l2.122 2.12a1.5 1.5 0 0 0 1.06.44H18A2.25 2.25 0 0 1 20.25 9v.776" />
+                          </svg>
+                          <span>{folder.folderName}</span>
+                        </div>
+                        <button
+                          className="move-confirm-btn"
+                          onClick={() => confirmFileMove(folder.folderId)}
+                        >
+                          이동
+                        </button>
+                      </li>
+                    ))
+                  ) : (
+                    <li className="no-subfolder-message">하위 폴더가 없습니다.</li>
+                  )}
                 </ul>
 
-                {moveFolderStack.length > 0 && (
-                  <div className="move-path">
-                    현재 경로: /
-                    {moveFolderStack.map(p => p.name).join(' / ')}
-                  </div>
-                )}
+                <div className="move-path">
+                  <span className="current-path">현재 경로: /{moveFolderStack.map(p => p.name).join(' / ')}</span>
+
+                  {moveFolderStack.length > 0 && (
+                    <button
+                      className="move-back-btn"
+                      onClick={() => {
+                        if (moveFolderStack.length === 1) {
+                          loadMoveFolderContents(null);
+                          setMoveFolderStack([]);
+                        } else {
+                          const updatedStack = [...moveFolderStack];
+                          updatedStack.pop();
+                          setMoveFolderStack(updatedStack);
+                          const last = updatedStack[updatedStack.length - 1];
+                          loadMoveFolderContents(last.id);
+                        }
+                      }}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="back-icon" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 15 3 9m0 0 6-6M3 9h12a6 6 0 0 1 0 12h-3" />
+                      </svg>
+                      <span>뒤로가기</span>
+                    </button>
+                  )}
+                </div>
+
 
                 <button className="modal-close-btn" onClick={() => setFileMoveModalOpen(false)}>
                   닫기

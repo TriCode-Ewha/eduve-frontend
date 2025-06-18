@@ -759,3 +759,57 @@
 .modal-close-btn:hover {
   background-color: #e0e0e0;
 }
+
+.move-modal {
+  position: relative; /* 중요: 버튼 위치 기준 */
+}
+
+.move-path {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0 12px;
+  font-size: 14px;
+  color: #333;
+  border-bottom: 1px solid #eee;
+}
+
+.current-path {
+  font-weight: 500;
+}
+
+
+.move-back-wrapper {
+  position: absolute;
+  top: 50px;
+  left: 16px;
+}
+
+.move-back-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  color: #444;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 2px 6px;
+}
+
+.back-icon {
+  width: 16px;
+  height: 16px;
+  stroke: #444;
+}
+
+.back-label {
+  font-size: 13px;
+}
+
+
+.no-subfolder-message {
+  padding: 12px;
+  text-align: center;
+  color: #999;
+}
