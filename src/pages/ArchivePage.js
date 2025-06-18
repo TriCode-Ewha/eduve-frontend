@@ -58,6 +58,14 @@ export default function ArchivePage() {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deleteTargetFileId, setDeleteTargetFileId] = useState(null);
 
+  // 이동 폴더 선택 모달
+  const [fileMoveModalOpen, setFileMoveModalOpen] = useState(false);
+  const [moveCurrentFolderId, setMoveCurrentFolderId] = useState(null);
+  const [moveFolders, setMoveFolders] = useState([]);
+  const [moveFolderStack, setMoveFolderStack] = useState([]);
+
+  const [moveTargetFileId, setMoveTargetFileId] = useState(null);
+
   // — 사이드바 트리 확장 상태
   const [expandedPaths, setExpandedPaths] = useState([]);
   const toggleExpand = pathKey => {
@@ -68,6 +76,47 @@ export default function ArchivePage() {
     );
   };
   const isExpanded = pathKey => expandedPaths.includes(pathKey);
+
+  const handleMoveClick = async (fileId) => {
+    setMoveTargetFileId(fileId);
+    setMoveFolderStack([]); // 탐색 경로 초기화
+    setFileMoveModalOpen(true);
+    await loadMoveFolderContents(null); // 루트에서 시작
+  };
+
+  const loadMoveFolderContents = async (folderId) => {
+    try {
+      const res = await fetchFolderContents(currentUserId, folderId ?? null, 'name');
+      const foldersOnly = (Array.isArray(res.data) ? res.data : []).filter(item => item.type === 'folder');
+      setMoveFolders(foldersOnly);
+      setMoveCurrentFolderId(folderId ?? null);
+    } catch (err) {
+      console.error('폴더 불러오기 실패', err);
+    }
+  };
+
+  const confirmFileMove = async (targetFolderId) => {
+    if (!moveTargetFileId || targetFolderId == null) return;
+    try {
+      const res = await moveFile(moveTargetFileId, targetFolderId);
+      const updated = res.data;
+      const updatedPath = getFolderPathById(targetFolderId);
+  
+      const next = files.map(f =>
+        f.id === updated.fileId ? { ...f, path: updatedPath } : f
+      );
+  
+      setFiles(next);
+      localStorage.setItem('files', JSON.stringify(next));
+      alert('이동 완료');
+    } catch (err) {
+      console.error('이동 실패', err);
+      alert('파일 이동에 실패했습니다.');
+    } finally {
+      setFileMoveModalOpen(false);
+      setMoveTargetFileId(null);
+    }
+  };
 
   // 파일 이동
   const handleMoveFile = async (fileId, targetFolderId) => {
@@ -785,7 +834,7 @@ export default function ArchivePage() {
                     {dropdownOpenId === file.id && (
                       <div className="dropdown-menu">
                         <button onClick={() => handleRenameClick(file)}> 이름 변경</button>
-                        <button onClick={() => handleMoveFile(file.id, null)}> 이동</button>
+                        <button onClick={() => handleMoveClick(file.id, null)}> 이동</button>
                         <button onClick={() => handleDeleteClick(file.id)}> 삭제</button>
                       </div>
                     )}
@@ -805,6 +854,53 @@ export default function ArchivePage() {
               <div className="archive-modal-content" onClick={e => e.stopPropagation()}>
                 <iframe src={previewFileUrl} title="PDF Preview" style={{ border: 'none' }} />
                 <button className="archive-close-btn" onClick={closePreview}>닫기</button>
+              </div>
+            </div>
+          )}
+
+          {fileMoveModalOpen && (
+            <div className="modal-overlay" onClick={() => setFileMoveModalOpen(false)}>
+              <div className="modal-content move-modal" onClick={e => e.stopPropagation()}>
+                <h3>이동할 폴더 선택</h3>
+                
+                <ul className="folder-selection-list">
+                  {moveFolders.map(folder => (
+                    <li key={folder.folderId} className="folder-item">
+                      <div
+                        onClick={() => {
+                          setMoveFolderStack(prev => [...prev, {
+                            id: folder.folderId,
+                            name: folder.folderName
+                          }]);
+                          loadMoveFolderContents(folder.folderId);
+                        }}
+                        className="folder-name-clickable folder-flex-row"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="move-folder-icon" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 9.776c.112-.017.227-.026.344-.026h15.812c.117 0 .232.009.344.026m-16.5 0a2.25 2.25 0 0 0-1.883 2.542l.857 6a2.25 2.25 0 0 0 2.227 1.932H19.05a2.25 2.25 0 0 0 2.227-1.932l.857-6a2.25 2.25 0 0 0-1.883-2.542m-16.5 0V6A2.25 2.25 0 0 1 6 3.75h3.879a1.5 1.5 0 0 1 1.06.44l2.122 2.12a1.5 1.5 0 0 0 1.06.44H18A2.25 2.25 0 0 1 20.25 9v.776" />
+                        </svg>
+                        <span>{folder.folderName}</span>
+                      </div>
+                      <button
+                        className="move-confirm-btn"
+                        onClick={() => confirmFileMove(folder.folderId)}
+                      >
+                        이동
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+
+                {moveFolderStack.length > 0 && (
+                  <div className="move-path">
+                    현재 경로: /
+                    {moveFolderStack.map(p => p.name).join(' / ')}
+                  </div>
+                )}
+
+                <button className="modal-close-btn" onClick={() => setFileMoveModalOpen(false)}>
+                  닫기
+                </button>
               </div>
             </div>
           )}

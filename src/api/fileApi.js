@@ -38,10 +38,10 @@ export const renameFile = (fileId, newName) =>
  * @param {string|number} fileId
  * @param {string|number} folderId
  */
-export const moveFile = (fileId, folderId) =>
+export const moveFile = (fileId, newFolderId) =>
   axiosInstance.patch(
     `/resources/file/${fileId}/move`,
-    { folderId }
+    { newFolderId }
   );
 
 /**

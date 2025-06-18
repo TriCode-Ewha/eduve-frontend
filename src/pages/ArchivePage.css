@@ -579,7 +579,7 @@
 
 .modal-content {
   background: white;
-  padding: 10px 29px;              /* 상하 패딩 줄임 */
+  padding: 20px 73px 35px 43px;              /* 상하 패딩 줄임 */
   border-radius: 8px;
   width: 220px;
   max-height: 160px;               /* 🔥 세로 크기 제한 */
@@ -613,7 +613,7 @@
   padding: 6px 12px;
   font-size: 13px;
   border: none;
-  background-color: #F8E1DE;
+  background-color: #f9cfca;
   color: rgb(0, 0, 0);
   border-radius: 4px;
   cursor: pointer;
@@ -621,4 +621,141 @@
 
 .modal-actions button:last-child {
   background-color: #aaa;
+}
+
+/* 삭제 모달용 작은 사이즈 모달 */
+.modal-content.delete-modal.small {
+  width: 300px;
+  padding: 20px;
+  border-radius: 12px;
+  text-align: center;
+}
+
+/* 삭제 모달 제목 */
+.modal-content.delete-modal.small h3 {
+  font-size: 18px;
+  margin-bottom: 10px;
+}
+
+/* 삭제 모달 설명 텍스트 */
+.modal-content.delete-modal.small p {
+  font-size: 14px;
+  color: #808080;
+  margin-bottom: 20px;
+}
+
+/* 삭제 모달 버튼 스타일 */
+.modal-content.delete-modal.small .modal-actions button {
+  margin: 0 8px;
+  padding: 8px 14px;
+  font-size: 14px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+
+.move-modal {
+  width: 480px; /* 예전보다 살짝 좁게 */
+  max-height: 50vh;
+  overflow-y: auto;
+  border-radius: 16px; /* ⬅️ 모든 모서리 둥글게 */
+  overflow: hidden;    /* ⬅️ 스크롤 잘리는 모서리 방지 */
+  padding: 24px;
+  border-radius: 12px;
+  background: white;
+}
+
+/* 이동 모달 전용 스타일 */
+.modal-content.move-modal {
+  width: 340px;               /* ✅ 전체 너비 줄이기 */
+  max-height: 50vh;
+  background: white;
+  border-radius: 16px;        /* ✅ 모든 모서리 둥글게 (우측 포함) */
+  overflow: hidden;           /* ✅ 둥근 모서리에 스크롤 안 겹치게 */
+  display: flex;
+  flex-direction: column;
+  padding: 18px;              /* ✅ 안쪽 여백 조정 */
+}
+
+.folder-selection-list {
+  flex: 1;
+  overflow-y: auto;
+  max-height: 40vh;        /* ✅ 리스트 자체에 높이 제한 */
+  padding-top: 12px;
+  padding-bottom: 12px;
+  padding-left: 10px;
+  padding-right: 14px;
+}
+
+.folder-selection-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 10px; /* ⬅️ 상하 간격 줄임 */
+  margin: 4px 0;     /* ⬅️ 리스트 항목 간 거리도 최소화 */
+  border-bottom: 1px solid #eee;
+  font-size: 14px;
+}
+
+.folder-name-clickable {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 2;  
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.folder-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px;
+  border-bottom: 1px solid #eee;
+  margin-bottom: 12px;
+}
+
+.move-confirm-btn {
+  background-color: #f9dbd8;
+  color: rgb(80, 80, 80);
+  border: none;
+  padding: 6px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.move-folder-icon {
+  width: 20px;
+  height: 20px;
+  margin-right: 8px;
+  vertical-align: middle;
+  color: #444;
+}
+
+.folder-flex-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.folder-selection-list {
+  padding-top: 12px;
+  padding-bottom: 12px;
+  margin: 0;
+  list-style: none;
+}
+
+.modal-close-btn {
+  margin-top: 16px;
+  padding: 8px 18px;
+  border: none;
+  background-color: #f2f2f2;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.modal-close-btn:hover {
+  background-color: #e0e0e0;
 }
