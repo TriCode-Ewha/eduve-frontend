@@ -10,7 +10,10 @@ import {
   fetchUserFolders,
   fetchFolderContents,
   moveFile,
-  deleteFile
+  deleteFile,
+  renameFolder,
+  moveFolder,
+  deleteFolder
 } from '../api/fileApi';
 import { v4 as uuidv4 } from 'uuid';
 import { jwtDecode } from 'jwt-decode';
@@ -66,6 +69,14 @@ export default function ArchivePage() {
 
   const [moveTargetFileId, setMoveTargetFileId] = useState(null);
 
+  // folder
+  const [folderDropdownOpenId, setFolderDropdownOpenId] = useState(null);
+  const [renameTargetFolder, setRenameTargetFolder] = useState(null);
+  const [renameFolderModalOpen, setRenameFolderModalOpen] = useState(false);
+  const [renameFolderInput, setRenameFolderInput] = useState('');
+
+  const [moveTargetFolderId, setMoveTargetFolderId] = useState(null);
+
   // — 사이드바 트리 확장 상태
   const [expandedPaths, setExpandedPaths] = useState([]);
   const toggleExpand = pathKey => {
@@ -77,10 +88,76 @@ export default function ArchivePage() {
   };
   const isExpanded = pathKey => expandedPaths.includes(pathKey);
 
-  const handleMoveClick = async (fileId) => {
-    setMoveTargetFileId(fileId);
+
+  const handleRenameFolderClick = (folder) => {
+    setRenameTargetFolder(folder);
+    setRenameFolderInput(folder.name);
+    setRenameFolderModalOpen(true);
+    setFolderDropdownOpenId(null);
+  };
+
+  const confirmRenameFolder = async () => {
+    if (!renameFolderInput || renameFolderInput === renameTargetFolder.name) {
+      setRenameFolderModalOpen(false);
+      return;
+    }
+    try {
+      const res = await renameFolder(renameTargetFolder.id, renameFolderInput, currentUserId);
+      const updated = res.data;
+      const next = folders.map(f =>
+        f.id === updated.folderId ? { ...f, name: updated.folderName } : f
+      );
+      setFolders(next);
+      localStorage.setItem('folders', JSON.stringify(next));
+    } catch (err) {
+      alert('폴더 이름 변경 실패');
+    } finally {
+      setRenameFolderModalOpen(false);
+    }
+  };
+  
+  // (3) 폴더 이동 핸들러
+  const handleMoveFolder = async (folderId, newParentId) => {
+    try {
+      const res = await moveFolder(folderId, newParentId, currentUserId);
+      const updatedPath = res.data.path;
+      const next = folders.map(f =>
+        f.id === folderId ? { ...f, path: updatedPath } : f
+      );
+      setFolders(next);
+      localStorage.setItem('folders', JSON.stringify(next));
+      alert('이동 완료');
+    } catch (err) {
+      console.error('폴더 이동 실패', err);
+      alert('폴더 이동 실패');
+    }
+  };
+  
+  // (4) 폴더 삭제 핸들러
+  const handleDeleteFolder = async (folderId) => {
+    if (!window.confirm('정말 삭제하시겠습니까?')) return;
+    try {
+      await deleteFolder(folderId);
+      const next = folders.filter(f => f.id !== folderId);
+      setFolders(next);
+      localStorage.setItem('folders', JSON.stringify(next));
+    } catch (err) {
+      console.error('폴더 삭제 실패', err);
+      alert('폴더 삭제 실패');
+    }
+  };
+
+  const handleMoveClick = async (itemId, isFolder = false) => {
+    if (isFolder) {
+      setMoveTargetFileId(null); // 파일 아닌 경우 null로 설정
+      setMoveTargetFolderId(itemId); // 새로 추가된 상태
+    } else {
+      setMoveTargetFileId(itemId);
+      setMoveTargetFolderId(null); // 폴더 아닌 경우 null
+    }
+  
     setFileMoveModalOpen(true);
-    await loadMoveFolderContents(null, true); // 루트 진입임을 명시적으로 전달
+    await loadMoveFolderContents(null, true);
   };
   
 
@@ -117,25 +194,34 @@ export default function ArchivePage() {
   
 
   const confirmFileMove = async (targetFolderId) => {
-    if (!moveTargetFileId || targetFolderId == null) return;
     try {
-      const res = await moveFile(moveTargetFileId, targetFolderId);
-      const updated = res.data;
-      const updatedPath = getFolderPathById(targetFolderId);
-  
-      const next = files.map(f =>
-        f.id === updated.fileId ? { ...f, path: updatedPath } : f
-      );
-  
-      setFiles(next);
-      localStorage.setItem('files', JSON.stringify(next));
-      alert('이동 완료');
+      if (moveTargetFileId) {
+        const res = await moveFile(moveTargetFileId, targetFolderId);
+        const updated = res.data;
+        const updatedPath = getFolderPathById(targetFolderId);
+        const next = files.map(f =>
+          f.id === updated.fileId ? { ...f, path: updatedPath } : f
+        );
+        setFiles(next);
+        localStorage.setItem('files', JSON.stringify(next));
+        alert('파일 이동 완료');
+      } else if (moveTargetFolderId) {
+        const res = await moveFolder(moveTargetFolderId, targetFolderId, currentUserId);
+        const updatedPath = res.data.path;
+        const next = folders.map(f =>
+          f.id === moveTargetFolderId ? { ...f, path: updatedPath } : f
+        );
+        setFolders(next);
+        localStorage.setItem('folders', JSON.stringify(next));
+        alert('폴더 이동 완료');
+      }
     } catch (err) {
       console.error('이동 실패', err);
-      alert('파일 이동에 실패했습니다.');
+      alert('이동 실패');
     } finally {
       setFileMoveModalOpen(false);
       setMoveTargetFileId(null);
+      setMoveTargetFolderId(null);
     }
   };
 
@@ -493,13 +579,7 @@ export default function ArchivePage() {
     return folder ? folder.path : [];
   };
 
-  // — 삭제 / 이름 변경
-  const handleDeleteFolder = id => {
-    if (!window.confirm('삭제하시겠습니까?')) return;
-    const next = folders.filter(f => f.id !== id);
-    setFolders(next);
-    localStorage.setItem('folders', JSON.stringify(next));
-  };
+
   const handleRenameFile = async file => {
     const newName = prompt('새 이름을 입력하세요', file.name);
     if (!newName || newName === file.name) return;
@@ -768,16 +848,61 @@ export default function ArchivePage() {
             </div>
 
             {sortedFolders.map(f => (
-              <div
-                key={f.id}
-                className="folder-box"
-                onClick={() => handleFolderClick(f)}
-                onContextMenu={e => { e.preventDefault(); handleDeleteFolder(f.id); }}
-              >
+              <div key={f.id} className="folder-box" style={{ position: 'relative' }}>
                 <img src="/folder.png" className="folder-icon" alt="folder" />
-                <div className="folder-name">{f.name}</div>
+              
+                <div className="folder-name-row">
+                  <div className="folder-name">{f.name}</div>
+              
+                  <button
+                    className="dropdown-toggle clean-toggle"
+                    onClick={() =>
+                      setFolderDropdownOpenId(folderDropdownOpenId === f.id ? null : f.id)
+                    }
+                  >
+                    <svg
+                      className="dropdown-icon"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="1.5"
+                        d="M19.5 8.25l-7.5 7.5-7.5-7.5"
+                      />
+                    </svg>
+                  </button>
+              
+                  {folderDropdownOpenId === f.id && (
+                    <div className="dropdown-menu">
+                      <button onClick={() => handleRenameFolderClick(f)}>이름 변경</button>
+                      <button onClick={() => handleMoveClick(f.id, true)}>이동</button>
+                      <button onClick={() => handleDeleteFolder(f.id)}>삭제</button>
+                    </div>
+                  )}
+                </div>
               </div>
             ))}
+
+          
+            {renameFolderModalOpen && (
+              <div className="modal-overlay" onClick={() => setRenameFolderModalOpen(false)}>
+                <div className="modal-content" onClick={e => e.stopPropagation()}>
+                  <h3>폴더 이름 변경</h3>
+                  <input
+                    className="rename-input"
+                    value={renameFolderInput}
+                    onChange={e => setRenameFolderInput(e.target.value)}
+                  />
+                  <div className="modal-actions">
+                    <button onClick={confirmRenameFolder}>확인</button>
+                    <button onClick={() => setRenameFolderModalOpen(false)}>취소</button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {isAddingFolder && (
               <div className="folder-box new-folder">
@@ -832,16 +957,12 @@ export default function ArchivePage() {
                     aria-label="더보기"
                   >
                     <svg
+                      className="dropdown-icon"
                       xmlns="http://www.w3.org/2000/svg"
                       fill="none"
                       viewBox="0 0 24 24"
-                      strokeWidth={1.5}
+                      strokeWidth="1.5"
                       stroke="currentColor"
-                      style={{
-                        width: '18px',
-                        height: '18px',
-                        color: '#444',
-                      }}
                     >
                       <path
                         strokeLinecap="round"

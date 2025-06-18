@@ -94,3 +94,26 @@ export const fetchFolderContents = (userId, folderId, sort = null) => {
   }
 };
 
+
+/**
+ * 폴더 이름 변경
+ * PATCH /folders/{folderId}?newFolderName={name}
+ */
+export const renameFolder = (folderId, newFolderName, userId) =>
+  axiosInstance.patch(`/folders/${folderId}?newFolderName=${encodeURIComponent(newFolderName)}&userId=${userId}`);
+
+/**
+ * 폴더 이동
+ * PUT /folders/{folderId}/path?newParentFolderId={id}&userId={userId}
+ */
+export const moveFolder = (folderId, newParentFolderId, userId) =>
+  axiosInstance.patch(
+    `/folders/${folderId}/path?newParentFolderId=${newParentFolderId}&userId=${userId}`
+  );
+
+/**
+ * 폴더 삭제
+ * DELETE /folders/{folderId}
+ */
+export const deleteFolder = (folderId) =>
+  axiosInstance.delete(`/folders/${folderId}`);
