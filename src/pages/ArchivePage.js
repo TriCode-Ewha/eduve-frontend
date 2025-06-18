@@ -424,7 +424,6 @@ export default function ArchivePage() {
               <div
                 onClick={() => {
                   toggleExpand(childKey);   // → “폴더 아래 드롭다운 펼치기/접기”
-                  handleFolderClick(f);     // → “메인 화면을 해당 폴더(경로)로 이동”
                 }}
               >
                 <img src="/mini_folder.png" className="sidebar-icon" alt="folder" />
@@ -625,7 +624,7 @@ export default function ArchivePage() {
             )}
           </div>
 
-          {/* 숨겨진 파일 업로드 input */}
+          {/* 사이드바 숨겨진 파일 업로드 input */}
           <input
             id="file-upload"
             type="file"
@@ -650,7 +649,16 @@ export default function ArchivePage() {
                   else handleDeleteFile(file.id);
                 }}
               >
-                <img src="/pdf-thumbnail.png" className="file-thumbnail" alt="file" />
+                <img
+                  src={
+                    file.name.endsWith('.pdf') ? '/pdf-thumbnail.png'
+                    : file.name.endsWith('.docx') ? '/doc-thumbnail.png'
+                    : file.name.endsWith('.txt') ? '/txt-thumbnail.png'
+                    : '/pdf-thumbnail.png'  // 기본 썸네일
+                  }
+                  className="file-thumbnail"
+                  alt="file"
+                />
                 <div className="file-name">{file.name}</div>
                 <div className="file-uploader">
                   {file.uploaderName}님 업로드
@@ -663,7 +671,16 @@ export default function ArchivePage() {
           {previewFileUrl && (
             <div className="archive-modal-overlay" onClick={closePreview}>
               <div className="archive-modal-content" onClick={e => e.stopPropagation()}>
-                <iframe src={previewFileUrl} title="PDF Preview" style={{ border: 'none' }} />
+                <iframe
+                    src={
+                      previewFileUrl.endsWith('.pdf') ? previewFileUrl
+                      : previewFileUrl.endsWith('.docx') ? `https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(previewFileUrl)}`
+                      : previewFileUrl.endsWith('.txt') ? previewFileUrl
+                      : previewFileUrl
+                    }
+                    title="File Preview"
+                    style={{ border: 'none', width: '100%', height: '80vh' }}
+                  />
                 <button className="archive-close-btn" onClick={closePreview}>닫기</button>
               </div>
             </div>
