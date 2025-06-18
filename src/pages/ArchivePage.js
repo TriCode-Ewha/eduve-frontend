@@ -9,7 +9,8 @@ import {
   createFolder,
   fetchUserFolders,
   fetchFolderContents,
-  moveFile
+  moveFile,
+  deleteFile
 } from '../api/fileApi';
 import { v4 as uuidv4 } from 'uuid';
 import { jwtDecode } from 'jwt-decode';
@@ -53,6 +54,10 @@ export default function ArchivePage() {
   const [renameTargetFile, setRenameTargetFile] = useState(null);
   const [renameInput, setRenameInput] = useState('');
 
+  // 삭제 모달 상태
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [deleteTargetFileId, setDeleteTargetFileId] = useState(null);
+
   // — 사이드바 트리 확장 상태
   const [expandedPaths, setExpandedPaths] = useState([]);
   const toggleExpand = pathKey => {
@@ -63,6 +68,28 @@ export default function ArchivePage() {
     );
   };
   const isExpanded = pathKey => expandedPaths.includes(pathKey);
+
+  // 파일 이동
+  const handleMoveFile = async (fileId, targetFolderId) => {
+    try {
+      await moveFile(fileId, targetFolderId);
+      const updated = files.map(f =>
+        f.id === fileId ? { ...f, path: getFolderPathById(targetFolderId) } : f
+      );
+      setFiles(updated);
+      localStorage.setItem('files', JSON.stringify(updated));
+      alert('이동 완료되었습니다.');
+    } catch (err) {
+      console.error('파일 이동 실패:', err);
+      alert('파일 이동에 실패했습니다.');
+    }
+  };
+
+  // 삭제 클릭 핸들러 
+  const handleDeleteClick = (fileId) => {
+    setDeleteTargetFileId(fileId);
+    setDeleteModalOpen(true);
+  };
 
   // — 이름 변경 모달 토글
   const handleRenameClick = file => {
@@ -90,6 +117,22 @@ export default function ArchivePage() {
       alert('이름 변경 실패');
     } finally {
       setRenameModalOpen(false);
+    }
+  };
+
+  // - 삭제 확인 
+  const confirmDelete = async () => {
+    try {
+      await deleteFile(deleteTargetFileId);
+      const next = files.filter(f => f.id !== deleteTargetFileId);
+      setFiles(next);
+      localStorage.setItem('files', JSON.stringify(next));
+    } catch (err) {
+      console.error('삭제 실패', err);
+      alert('삭제에 실패했습니다.');
+    } finally {
+      setDeleteModalOpen(false);
+      setDeleteTargetFileId(null);
     }
   };
 
@@ -375,18 +418,17 @@ export default function ArchivePage() {
     file.fileUrl ? setPreviewFileUrl(file.fileUrl) : alert('URL이 없습니다.');
   const closePreview = () => setPreviewFileUrl(null);
 
+  const getFolderPathById = (id) => {
+    const folder = folders.find(f => f.id === id);
+    return folder ? folder.path : [];
+  };
+
   // — 삭제 / 이름 변경
   const handleDeleteFolder = id => {
     if (!window.confirm('삭제하시겠습니까?')) return;
     const next = folders.filter(f => f.id !== id);
     setFolders(next);
     localStorage.setItem('folders', JSON.stringify(next));
-  };
-  const handleDeleteFile = id => {
-    if (!window.confirm('삭제하시겠습니까?')) return;
-    const next = files.filter(f => f.id !== id);
-    setFiles(next);
-    localStorage.setItem('files', JSON.stringify(next));
   };
   const handleRenameFile = async file => {
     const newName = prompt('새 이름을 입력하세요', file.name);
@@ -743,8 +785,8 @@ export default function ArchivePage() {
                     {dropdownOpenId === file.id && (
                       <div className="dropdown-menu">
                         <button onClick={() => handleRenameClick(file)}> 이름 변경</button>
-                        <button onClick={() => moveFile(file.id, null)}> 이동</button>
-                        <button onClick={() => handleDeleteFile(file.id)}> 삭제</button>
+                        <button onClick={() => handleMoveFile(file.id, null)}> 이동</button>
+                        <button onClick={() => handleDeleteClick(file.id)}> 삭제</button>
                       </div>
                     )}
                   </div>
@@ -767,6 +809,19 @@ export default function ArchivePage() {
             </div>
           )}
 
+          {/* ✅ 삭제 확인 모달 */}
+          {deleteModalOpen && (
+            <div className="modal-overlay" onClick={() => setDeleteModalOpen(false)}>
+              <div className="modal-content delete-modal small" onClick={e => e.stopPropagation()}>
+                <h3> 정말 삭제할까요? 🗑️</h3>
+                <p>이 작업은 되돌릴 수 없습니다.</p>
+                <div className="modal-actions">
+                  <button onClick={confirmDelete}>삭제하기</button>
+                  <button onClick={() => setDeleteModalOpen(false)}>취소</button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* ✅ 이름 변경 모달 추가 위치 */}
           {renameModalOpen && (
