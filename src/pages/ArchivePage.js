@@ -639,9 +639,10 @@ export default function ArchivePage() {
     try {
       const res = await fetchFile(file.id);  // 📌 파일 조회 API 호출
       const realUrl = res.data.fileUrl;      // ✅ 응답에서 fileUrl 추출
+      const encodeUrl = encodeURI(realUrl);
   
       if (file.name.endsWith('.txt')) {
-        const textRes = await fetch(realUrl, {mode: 'cors'});
+        const textRes = await fetch(encodeUrl, {mode: 'cors'});
         const text = await textRes.text();
         setTxtContent(text);
       } else {
