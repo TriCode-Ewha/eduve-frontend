@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./TeacherSignup.css";
 import { signupTeacher, checkUsername, checkEmail } from "../api/SignupApi";
+import { useEffect } from "react";
 
 const TeacherSignup = () => {
   const navigate = useNavigate();
@@ -16,26 +17,77 @@ const TeacherSignup = () => {
   const [usernameMessage, setUsernameMessage] = useState("");
   const [emailMessage, setEmailMessage] = useState("");
 
-  const handleUsernameCheck = async () => {
-    try {
-      const res = await checkUsername(username);
-      alert(res.message);
-    } catch (error) {
-      alert("아이디 중복 확인 중 오류 발생");
-    }
-  };
+  const [isUsernameChecked, setIsUsernameChecked] = useState(false);
+  const [isEmailChecked, setIsEmailChecked] = useState(false);
+  const [isAcademyChecked, setIsAcademyChecked] = useState(false);
 
-  const handleEmailCheck = async () => {
-    try {
-      const res = await checkEmail(email);
-      alert(res.message);
-    } catch (error) {
-      alert("이메일 중복 확인 중 오류 발생");
-    }
-  };
+  
+  
+    // username 값이 바뀌면 중복확인 초기화
+    useEffect(() => {
+      setIsUsernameChecked(false);
+    }, [username]);
+  
+    // email 값이 바뀌면 중복확인 초기화
+    useEffect(() => {
+      setIsEmailChecked(false);
+    }, [email]);
+  
+    // 학원 코드가 바뀌면 인증 초기화
+    useEffect(() => {
+      setIsAcademyChecked(false);
+    }, [academyApi]);
+  
+    const handleAcademyCheck = () => {
+      alert("학원 인증이 완료되었습니다.");
+      setIsAcademyChecked(true);
+    };
+  
+    const handleUsernameCheck = async () => {
+      if (!username.trim()) {
+        alert("아이디를 입력해주세요.");
+        return;
+      }
+      try {
+        const res = await checkUsername(username);
+        alert(res.message);
+        if (res.exists === false) {
+          setIsUsernameChecked(true);
+        } else {
+          setIsUsernameChecked(false);
+        }
+      } catch (error) {
+        alert("아이디를 다시 확인해주세요.");
+        setIsUsernameChecked(false);
+      }
+    };
+  
+    const handleEmailCheck = async () => {
+      if (!email.trim()) {
+        alert("이메일을 입력해주세요.");
+        return;
+      }
+      try {
+        const res = await checkEmail(email);
+        alert(res.message);
+        if (res.exists === false) {
+          setIsEmailChecked(true);
+        } else {
+          setIsEmailChecked(false);
+        }
+      } catch (error) {
+        alert("이메일을 다시 확인해주세요.");
+        setIsEmailChecked(false);
+      }
+    };
 
   const handleSignup = async (e) => {
     e.preventDefault();
+
+      if (!username || !password || !confirmPassword || !name || !email || !academyApi) {
+        alert("모든 필수 항목을 입력해주세요.");
+        return;
+      }
 
     if (password !== confirmPassword) {
       alert("비밀번호가 일치하지 않습니다.");
@@ -55,7 +107,7 @@ const TeacherSignup = () => {
       alert("회원가입이 완료되었습니다!");
       navigate("/login");
     } catch (error) {
-      alert("회원가입 중 오류가 발생했습니다.");
+      alert("회원가입 중 오류 발생");
     }
   };
 
@@ -77,7 +129,7 @@ const TeacherSignup = () => {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
             />
-            <button type="button" onClick={handleUsernameCheck}>중복확인</button>
+            <button type="button" onClick={handleUsernameCheck} className={isUsernameChecked ? "checked-button" : ""}>중복확인</button>
           </div>
           {usernameMessage && <p className="check-message">{usernameMessage}</p>}
         </div>
@@ -131,7 +183,7 @@ const TeacherSignup = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
-            <button type="button" onClick={handleEmailCheck}>중복확인</button>
+            <button type="button" onClick={handleEmailCheck} className={isEmailChecked ? "checked-button" : ""}>중복확인</button>
           </div>
           {emailMessage && <p className="check-message">{emailMessage}</p>}
         </div>
@@ -146,7 +198,7 @@ const TeacherSignup = () => {
               value={academyApi}
               onChange={(e) => setAcademyApi(e.target.value)}
             />
-            <button type="button">코드 확인</button>
+            <button type="button" onClick={handleAcademyCheck} className={isAcademyChecked ? "checked-button" : ""}>코드 확인</button>
           </div>
         </div>
 

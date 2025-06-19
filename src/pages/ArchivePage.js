@@ -18,9 +18,13 @@ import {
 import { v4 as uuidv4 } from 'uuid';
 import { jwtDecode } from 'jwt-decode';
 import './ArchivePage.css';
+import ClipLoader from "react-spinners/ClipLoader";
 
 export default function ArchivePage() {
   const navigate = useNavigate();
+
+  // 로딩 스피너 
+  const [isLoading, setIsLoading] = useState(false);
 
   // — 사용자 & 메뉴 상태
   const [username, setUsername] = useState('');
@@ -540,11 +544,16 @@ export default function ArchivePage() {
     }
   }, [newFolderName, currentPath, folders]);
 
+  
   // — 파일 업로드 핸들러 (현재 위치에 파일 업로드)
+
   const handleFileSelect = async e => {
     const file = e.target.files[0];
     if (!file) return;
     console.log('✅ 선택한 파일:', file); 
+
+    setIsLoading(true); // 로딩 시작
+    
     let userId, uploader;
     try {
       const token = localStorage.getItem('token');
@@ -593,9 +602,11 @@ export default function ArchivePage() {
       console.error('파일 업로드 실패', err);
       alert('파일 업로드에 실패했습니다.');
     } finally {
+      setIsLoading(false); // 로딩 끝
       setAddMenuOpen(false);
     }
   };
+
 
   // — PDF 미리보기
   const handleFileDoubleClick = async (file) => {
@@ -756,6 +767,37 @@ export default function ArchivePage() {
 
   return (
     <div className="archive-container">
+
+      {/* 로딩 스피너 */}
+      {isLoading && (
+        <div style={{
+          position: 'fixed',
+          top: 0, left: 0, width: '100%', height: '100%',
+          backgroundColor: 'rgba(255, 255, 255, 0.6)',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 9999
+        }}>
+          <ClipLoader color="#36d7b7" size={60} />
+          <div className="typing-container">
+            <p
+              className="typing-text"
+              style={{
+                backgroundColor: 'white',
+                padding: '4px 12px',
+                borderRadius: '6px',
+                boxShadow: '0 2px 6px rgba(0,0,0,0.1)'
+              }}
+            >
+              학습 자료를 업로드 중이에요. 조금만 기다려주세요!! 🤓
+            </p>
+          </div>
+        </div>
+      )}
+
+
       {/* 네비게이션 바 */}
       <nav className="navbar">
         <h1 className="logo" onClick={() => navigate('/')}>
@@ -977,7 +1019,7 @@ export default function ArchivePage() {
             id="file-upload"
             type="file"
             style={{ display: 'none' }}
-            onChange={handleFileSelect}
+            onChange={handleFileSelect} 
           />
 
           {/* 메인: 현재 경로에 속한 “파일” 목록 */}
@@ -1191,5 +1233,6 @@ export default function ArchivePage() {
         </main>
       </div>
     </div>
+
   );
 }

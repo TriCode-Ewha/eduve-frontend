@@ -2,7 +2,7 @@
 // src/api/StudentSignupApi.js
 import axios from "axios";
 
-const BASE_URL = "http://15.165.205.11:8080";
+const BASE_URL = "https://api.eduve.r-e.kr";
 
 // 선생님 회원가입
 export const signupTeacher = async (signupData) => {
