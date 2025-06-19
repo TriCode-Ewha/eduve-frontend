@@ -650,6 +650,12 @@ export default function ArchivePage() {
     const encodedUrl = encodeURI(realUrl);
 
     if (file.name.endsWith('.txt')) {
+      if (res.data.flaskMessage) {
+        setTxtContent(res.data.flaskMessage);
+        setPreviewFileUrl(null);
+        return;
+      }
+
       const textRes = await fetch(encodedUrl, { mode: 'cors' });
       const text = await textRes.text();
       setTxtContent(text);
