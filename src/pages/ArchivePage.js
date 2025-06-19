@@ -486,7 +486,8 @@ export default function ArchivePage() {
         fileUrl: f.fileUrl,
         uploaderId: f.userId,
         uploaderRole: f.role,
-        uploaderName: f.username
+        uploaderName: f.username,
+        fileOwner: f.fileOwner  // ✅ 여기에 'ming' 들어있음
       }));
   
       // 현재 path에 해당하는 폴더들만 덮어쓰기
@@ -619,27 +620,31 @@ export default function ArchivePage() {
 
   // — PDF 미리보기
   const handleFileDoubleClick = async (file) => {
-  if (!file.fileUrl) {
-    alert('URL이 없습니다.');
-    return;
-  }
-
-  // 텍스트 파일이면 fetch로 읽기
-  if (file.name.endsWith('.txt')) {
-    try {
-      const res = await fetch(file.fileUrl);
-      const text = await res.text(); // 기본이 UTF-8
-      setTxtContent(text);
-      setPreviewFileUrl(file.fileUrl); // 모달 트리거용
-    } catch (err) {
-      console.error('TXT 미리보기 오류', err);
-      alert('텍스트 파일을 불러오는 데 실패했습니다.');
+    if (!file.id) {
+      alert('파일 ID가 없습니다.');
+      return;
     }
-  } else {
-    setTxtContent(null); // 다른 파일 누르면 txt 내용 초기화
-    setPreviewFileUrl(file.fileUrl);
-  }
-};
+  
+    try {
+      const res = await fetchFile(file.id);  // 📌 파일 조회 API 호출
+      const realUrl = res.data.fileUrl;      // ✅ 응답에서 fileUrl 추출
+  
+      if (file.name.endsWith('.txt')) {
+        const textRes = await fetch(realUrl);
+        const text = await textRes.text();
+        setTxtContent(text);
+      } else {
+        setTxtContent(null);
+      }
+  
+      setPreviewFileUrl(realUrl); // ✅ 최종적으로 미리보기 URL 설정
+  
+    } catch (err) {
+      console.error('파일 미리보기 실패', err);
+      alert('파일 미리보기에 실패했습니다.');
+    }
+  };
+  
 
 
   const getFolderPathById = (id) => {
@@ -1105,7 +1110,7 @@ export default function ArchivePage() {
                 </div>
 
                 <div className="file-uploader">
-                  {file.owner}님 업로드
+                  {(file.fileOwner || file.owner || file.uploaderName) + '님 업로드'}
                 </div>
               </div>
             ))}
