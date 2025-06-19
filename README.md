@@ -1,92 +1,7 @@
-# Getting Started with Create React App
+# Edu've: RAG 기반 AI 챗봇 서비스
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Edu've는 RAG(Retrieval-Augmented Generation) 기반의 AI 챗봇 학습 지원 서비스로, 강사와 수강생 문서 기반 질문 응답을 지원합니다. 학습자료 아카이빙, 개인 맞춤형 챗봇, 실시간 질의응답 기능을 포함하며, Spring Boot와 Flask로 백엔드를 구성하고 React 기반 웹 인터페이스를 제공합니다. 학습 환경에서의 커뮤니케이션과 정보 접근성을 향상시키는 것을 목표로 합니다.
 
-## Available Scripts
-
-In the project directory, you can run:
-
-### `npm start`
-
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
-
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
-
-### `npm test`
-
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
-
-### `npm run build`
-
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
-
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
-
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
-
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
-
-
-
-
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
-
-
-
-# Eduve: RAG 기반 AI 챗봇 서비스
-
-Eduve는 음성 인식(STT), OCR 문자 추출, 채팅 메시지 저장 등 기능을 제공하는 Spring Boot 기반의 교육 지원 백엔드 서버입니다. 이 프로젝트는 JWT 인증과 RESTful API를 기반으로 하며, 학생과 교사 간 커뮤니케이션을 지원합니다.
 
 <br>
 <br>
@@ -128,13 +43,17 @@ Eduve Front는 Eduve 플랫폼의 사용자 인터페이스(UI)를 담당하는 
 | `App.test.js`         | 테스트 코드                                                           |
 | `vercel.json`         | Vercel 배포 설정 파일  설정                                     |
 
-> ✅ pages 디렉토리 내 주요 화면 구성:
-> - `Login.js` / `Signup.js` : 로그인 및 회원가입  
-> - `ChatPage.js`, `ChatArea.js` : 챗봇 대화  
-> - `MainPage.js`, `Sidebar.js` : 메인 홈 및 UI 틀  
-> - `StudentDashboard.js`, `TeacherDashboard.js` : 사용자별 대시보드  
-> - `CharacterPage.js` : 캐릭터 설정
-> - `ArchivePage.js` : 학습자료 아카이빙
+<br>
+
+## 🧾 주요 화면 및 기능 설명
+
+| 페이지/컴포넌트                                      | 설명                                                                    |
+| --------------------------------------------- | --------------------------------------------------------------------- |
+| `ChatPage.js` / `ChatArea.js`                 | 챗봇 대화 인터페이스. 실시간 메시지 송수신, 마크다운 처리, 좋아요 반영, PDF 미리보기, 그래프/URL 분석 기능 |
+| `CharacterPage.js`                            | 사용자 캐릭터의 말투(Tone)와 설명 수준 설정 (FRIENDLY, FORMAL 등)                        |
+| `Login.js` / `Signup.js`                      | 사용자 인증: 로그인 및 회원가입                                                    |
+| `ArchivePage.js`                              | 학습 문서 업로드 및 관리                                                        |
+| `Sidebar.js`, `MainPage.js`                   | 전체 레이아웃 및 네비게이션 구조 제공                                                 |
 
 
 <br>
@@ -143,12 +62,11 @@ Eduve Front는 Eduve 플랫폼의 사용자 인터페이스(UI)를 담당하는 
 
 #### 1. 환경 요구사항
 
-- Node.js 18+
-- npm 9+
+- **Node.js**: 18+
+- **npm**: 9+
 
 #### 2. 설치 절차
 
-```bash
 ```bash
 # 저장소 클론
 git clone https://github.com/TriCode-Ewha/eduve-frontend.git
@@ -190,67 +108,21 @@ npm start
 
 
 
-## 
-
-<br>
-<br>
-
-
-## ✅ How to Test
-이 프로젝트는 
-
-#### 테스트 실행
-```bash
-./gradlew test
-```
-
-
-
-
-
-
-<br>
-<br>
-
-## 📊 샘플 데이터 설명
-프로젝트에는 API 테스트용 샘플 데이터가 포함되어 있습니다.
-
-#### 1. 사용자 데이터 (users.csv)
-- 위치: src/main/resources/sample/users.csv
-- 형식: CSV
-```csv
-id,username,password,role
-1,teacher01,password123,ROLE_TEACHER
-2,student01,password456,ROLE_STUDENT
-```
-
-
-```
-
-<br>
-<br>
-
-
-## 🗄 Database 사용 정보
-- DBMS: MySQL
-
-```
-- JPA 기반으로 자동 테이블 생성 (ddl-auto: update)
-- 테스트/운영 환경별 DB 분리 가능
-
-
-
 <br>
 <br>
 
 ## 📚 사용된 오픈소스 목록
-| 라이브러리        | 설명                   | 라이선스     | 
-|------------------|------------------------|--------------|
-| Spring Boot      | 백엔드 프레임워크       | Apache 2.0   |
-| Spring Security  | 인증/인가 처리         | Apache 2.0    | 
-| jjwt             | JWT 토큰 처리           | Apache 2.0   |
-| Lombok           | 보일러플레이트 코드 제거 | MIT          |
-| Gradle           | 빌드 도구               | Apache 2.0   |
-| AWS CodeDeploy   | 배포 자동화             | -            | 
+
+| 기술/라이브러리              | 용도                                 |
+|-----------------------------|--------------------------------------|
+| **React 18**                | 사용자 인터페이스(UI) 구성             |
+| **React Router DOM**        | 클라이언트 사이드 라우팅               |
+| **Axios**                   | 백엔드 API 통신                       |
+| **Vite**                    | 빠른 개발 서버 및 빌드 도구            |
+| **Vercel**                  | 정적 웹사이트 배포 플랫폼              |
+| **jwt-decode**             | JWT 토큰 디코딩                       |
+| **react-markdown**         | 마크다운 렌더링                       |
+| **react-pdf**              | PDF 미리보기 기능 구현                |
+
 
 
