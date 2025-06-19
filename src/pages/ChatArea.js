@@ -191,7 +191,7 @@ const ChatArea = ({ messages, setMessages, username }) => {
         filePreview = {
           url: fileInfo.fileUrl,
           page: parseInt(fileInfo.page, 10) || 1,
-          title: fileInfo.fileName,
+          title: formatFileName(fileInfo.fileName),
         };
       }
       
@@ -212,6 +212,15 @@ const ChatArea = ({ messages, setMessages, username }) => {
         { sender: '잭슨', text: '질문 처리 중 오류가 발생했어요 😢' }
       ]);
     }
+  };
+
+  // 파일 url 가공
+  const formatFileName = (originalName) => {
+    if (!originalName) return '';
+    // 슬래시(/)로 나눈 뒤 마지막 부분만 가져오기
+    const parts = originalName.split('/');
+    const filename = parts[parts.length - 1];
+    return filename;
   };
 
   // 엔터 키로 메시지 전송 (Shift+Enter는 제외)
