@@ -8,7 +8,12 @@ import {
   renameFile,
   createFolder,
   fetchUserFolders,
-  fetchFolderContents
+  fetchFolderContents,
+  moveFile,
+  deleteFile,
+  renameFolder,
+  moveFolder,
+  deleteFolder
 } from '../api/fileApi';
 import { v4 as uuidv4 } from 'uuid';
 import { jwtDecode } from 'jwt-decode';
@@ -44,10 +49,40 @@ export default function ArchivePage() {
   const [files, setFiles] = useState([]);
   const [currentPath, setCurrentPath] = useState([]);
   const [previewFileUrl, setPreviewFileUrl] = useState(null);
+  // import 하단부나 useEffect 위쪽에 추가
+  const [dropdownOpenId, setDropdownOpenId] = useState(null);
 
   // — 현재 로그인된 user 정보 (userId, role)
   const [currentUserId, setCurrentUserId] = useState(null);
   const [currentUserRole, setCurrentUserRole] = useState(null);
+
+  // — 이름 변경 모달 상태
+  const [renameModalOpen, setRenameModalOpen] = useState(false);
+  const [renameTargetFile, setRenameTargetFile] = useState(null);
+  const [renameInput, setRenameInput] = useState('');
+
+  // 삭제 모달 상태
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [deleteTargetFileId, setDeleteTargetFileId] = useState(null);
+
+  // 이동 폴더 선택 모달
+  const [fileMoveModalOpen, setFileMoveModalOpen] = useState(false);
+  const [moveCurrentFolderId, setMoveCurrentFolderId] = useState(null);
+  const [moveFolders, setMoveFolders] = useState([]);
+  const [moveFolderStack, setMoveFolderStack] = useState([]);
+
+  const [moveTargetFileId, setMoveTargetFileId] = useState(null);
+
+  // folder
+  const [folderDropdownOpenId, setFolderDropdownOpenId] = useState(null);
+  const [renameTargetFolder, setRenameTargetFolder] = useState(null);
+  const [renameFolderModalOpen, setRenameFolderModalOpen] = useState(false);
+  const [renameFolderInput, setRenameFolderInput] = useState('');
+
+  const [moveTargetFolderId, setMoveTargetFolderId] = useState(null);
+
+  const [folderDeleteModalOpen, setFolderDeleteModalOpen] = useState(false);
+  const [deleteTargetFolderId, setDeleteTargetFolderId] = useState(null);
 
   // — 사이드바 트리 확장 상태
   const [expandedPaths, setExpandedPaths] = useState([]);
@@ -59,6 +94,216 @@ export default function ArchivePage() {
     );
   };
   const isExpanded = pathKey => expandedPaths.includes(pathKey);
+
+
+  const handleRenameFolderClick = (folder) => {
+    setRenameTargetFolder(folder);
+    setRenameFolderInput(folder.name);
+    setRenameFolderModalOpen(true);
+    setFolderDropdownOpenId(null);
+  };
+
+  const confirmRenameFolder = async () => {
+    if (!renameFolderInput || renameFolderInput === renameTargetFolder.name) {
+      setRenameFolderModalOpen(false);
+      return;
+    }
+    try {
+      const res = await renameFolder(renameTargetFolder.id, renameFolderInput, currentUserId);
+      const updated = res.data;
+      const next = folders.map(f =>
+        f.id === updated.folderId ? { ...f, name: updated.folderName } : f
+      );
+      setFolders(next);
+      localStorage.setItem('folders', JSON.stringify(next));
+    } catch (err) {
+      alert('폴더 이름 변경 실패');
+    } finally {
+      setRenameFolderModalOpen(false);
+    }
+  };
+  
+  // (3) 폴더 이동 핸들러
+  const handleMoveFolder = async (folderId, newParentId) => {
+    try {
+      const res = await moveFolder(folderId, newParentId, currentUserId);
+      const updatedPath = res.data.path;
+      const next = folders.map(f =>
+        f.id === folderId ? { ...f, path: updatedPath } : f
+      );
+      setFolders(next);
+      localStorage.setItem('folders', JSON.stringify(next));
+      alert('이동 완료');
+    } catch (err) {
+      console.error('폴더 이동 실패', err);
+      alert('폴더 이동 실패');
+    }
+  };
+  
+  const handleDeleteFolder = (folderId) => {
+    setDeleteTargetFolderId(folderId);
+    setFolderDeleteModalOpen(true);
+  };
+
+  const confirmFolderDelete = async () => {
+    try {
+      await deleteFolder(deleteTargetFolderId);
+      const next = folders.filter(f => f.id !== deleteTargetFolderId);
+      setFolders(next);
+      localStorage.setItem('folders', JSON.stringify(next));
+    } catch (err) {
+      console.error('폴더 삭제 실패', err);
+      alert('폴더 삭제 실패');
+    } finally {
+      setFolderDeleteModalOpen(false);
+      setDeleteTargetFolderId(null);
+    }
+  };
+
+  const handleMoveClick = async (itemId, isFolder = false) => {
+    if (isFolder) {
+      setMoveTargetFileId(null); // 파일 아닌 경우 null로 설정
+      setMoveTargetFolderId(itemId); // 새로 추가된 상태
+    } else {
+      setMoveTargetFileId(itemId);
+      setMoveTargetFolderId(null); // 폴더 아닌 경우 null
+    }
+  
+    setFileMoveModalOpen(true);
+    await loadMoveFolderContents(null, true);
+  };
+  
+
+  const loadMoveFolderContents = async (folderId, isRoot = false) => {
+    try {
+      const res = await fetchFolderContents(currentUserId, folderId ?? null, 'name');
+  
+      let foldersOnly = [];
+  
+      if (Array.isArray(res.data)) {
+        // 최상위 폴더 목록
+        foldersOnly = res.data.filter(item => item.type === 'folder');
+      } else if (res.data.subFolders) {
+        foldersOnly = res.data.subFolders;
+      }
+  
+      setMoveFolders(foldersOnly);
+      setMoveCurrentFolderId(folderId ?? null);
+  
+      if (isRoot || folderId === null) {
+        setMoveFolderStack([]); // 루트에서는 스택 초기화
+      } else if (res.data.folderName && res.data.folderId) {
+        setMoveFolderStack(prev => [...prev, {
+          id: res.data.folderId,
+          name: res.data.folderName
+        }]);
+      }
+  
+    } catch (err) {
+      console.error('폴더 불러오기 실패', err);
+      setMoveFolders([]); // fallback
+    }
+  };
+  
+
+  const confirmFileMove = async (targetFolderId) => {
+    try {
+      if (moveTargetFileId) {
+        const res = await moveFile(moveTargetFileId, targetFolderId);
+        const updated = res.data;
+        const updatedPath = getFolderPathById(targetFolderId);
+        const next = files.map(f =>
+          f.id === updated.fileId ? { ...f, path: updatedPath } : f
+        );
+        setFiles(next);
+        localStorage.setItem('files', JSON.stringify(next));
+        alert('파일 이동 완료');
+      } else if (moveTargetFolderId) {
+        const res = await moveFolder(moveTargetFolderId, targetFolderId, currentUserId);
+        const updatedPath = res.data.path;
+        const next = folders.map(f =>
+          f.id === moveTargetFolderId ? { ...f, path: updatedPath } : f
+        );
+        setFolders(next);
+        localStorage.setItem('folders', JSON.stringify(next));
+        alert('폴더 이동 완료');
+      }
+    } catch (err) {
+      console.error('이동 실패', err);
+      alert('이동 실패');
+    } finally {
+      setFileMoveModalOpen(false);
+      setMoveTargetFileId(null);
+      setMoveTargetFolderId(null);
+    }
+  };
+
+  // 파일 이동
+  const handleMoveFile = async (fileId, targetFolderId) => {
+    try {
+      await moveFile(fileId, targetFolderId);
+      const updated = files.map(f =>
+        f.id === fileId ? { ...f, path: getFolderPathById(targetFolderId) } : f
+      );
+      setFiles(updated);
+      localStorage.setItem('files', JSON.stringify(updated));
+      alert('이동 완료되었습니다.');
+    } catch (err) {
+      console.error('파일 이동 실패:', err);
+      alert('파일 이동에 실패했습니다.');
+    }
+  };
+
+  // 삭제 클릭 핸들러 
+  const handleDeleteClick = (fileId) => {
+    setDeleteTargetFileId(fileId);
+    setDeleteModalOpen(true);
+  };
+
+  // — 이름 변경 모달 토글
+  const handleRenameClick = file => {
+    setRenameTargetFile(file);
+    setRenameInput(file.name);
+    setRenameModalOpen(true);
+    setDropdownOpenId(null);
+  };
+
+  // — 이름 변경 확인
+  const confirmRename = async () => {
+    if (!renameInput || renameInput === renameTargetFile.name) {
+      setRenameModalOpen(false);
+      return;
+    }
+    try {
+      const res = await renameFile(renameTargetFile.id, renameInput);
+      const updated = res.data;
+      const next = files.map(f =>
+        f.id === updated.fileId ? { ...f, name: updated.fileName } : f
+      );
+      setFiles(next);
+      localStorage.setItem('files', JSON.stringify(next));
+    } catch (err) {
+      alert('이름 변경 실패');
+    } finally {
+      setRenameModalOpen(false);
+    }
+  };
+
+  // - 삭제 확인 
+  const confirmDelete = async () => {
+    try {
+      await deleteFile(deleteTargetFileId);
+      const next = files.filter(f => f.id !== deleteTargetFileId);
+      setFiles(next);
+      localStorage.setItem('files', JSON.stringify(next));
+    } catch (err) {
+      console.error('삭제 실패', err);
+      alert('삭제에 실패했습니다.');
+    } finally {
+      setDeleteModalOpen(false);
+      setDeleteTargetFileId(null);
+    }
+  };
 
   // — 컴포넌트 마운트 시: localStorage → state로 불러오기 + 토큰 디코딩
   useEffect(() => {
@@ -93,6 +338,17 @@ export default function ArchivePage() {
     }
   }, []);
 
+  // 캐시 초기화: currentUserId가 바뀌면 로컬스토리지와 state 비우기
+  useEffect(() => {
+    if (!currentUserId) return;
+
+    localStorage.removeItem('folders');
+    localStorage.removeItem('files');
+    setFolders([]);
+    setFiles([]);
+  }, [currentUserId]);
+
+
   // — **API 호출: 현재 userId가 세팅되면 최상위 폴더 목록 불러오기**
   useEffect(() => {
     if (!currentUserId) return;
@@ -100,9 +356,11 @@ export default function ArchivePage() {
     // (A) 최상위 폴더 목록
     fetchUserFolders(currentUserId, null)
       .then(res => {
-        const fetchedFolders = res.data.map(f => ({
-          id: f.id,
-          name: f.name,
+        const fetchedFolders = res.data
+        .filter(item => item.type === 'folder')
+        .map(f => ({
+          id: f.folderId,
+          name: f.folderName,
           path: []
         }));
 
@@ -126,33 +384,40 @@ export default function ArchivePage() {
     (async () => {
       try {
         const res2 = await fetchFolderContents(currentUserId, null, null);
-        const rootFiles = res2.data.files || [];
+    
+        // 응답에서 파일만 필터링
+        const rootFiles = res2.data.filter(item => item.type === 'file');
+    
         const mapped = rootFiles.map(ff => ({
           id:           ff.fileId,
           name:         ff.fileName,
-          path:         [], // 홈이므로 path 빈 배열
+          path:         [],
           fileUrl:      ff.fileUrl,
           uploaderId:   ff.userId,
           uploaderRole: ff.role,
-          uploaderName: ff.username
+          uploaderName: ff.username,
         }));
-
+    
         let existingFiles = [];
-        try{
-          existingFiles =JSON.parse(localStorage.getItem('files')) || [];
-        } catch { existingFiles = [];}
-
-        const mergedFiles =[
+        try {
+          existingFiles = JSON.parse(localStorage.getItem('files')) || [];
+        } catch {
+          existingFiles = [];
+        }
+    
+        const mergedFiles = [
           ...existingFiles,
           ...mapped.filter(fNew =>
-            !existingFiles.some(e=>e.id===fNew.id)
+            !existingFiles.some(e => e.id === fNew.id)
           )
         ];
-
-        if(sortOrder === 'name'){
-          mergedFiles.sort((a,b)=>
-          a.name.localCompare(b.name,'ko'));
+    
+        if (sortOrder === 'name') {
+          mergedFiles.sort((a, b) =>
+            a.name.localeCompare(b.name, 'ko')
+          );
         }
+    
         setFiles(mergedFiles);
         localStorage.setItem('files', JSON.stringify(mergedFiles));
       } catch (err) {
@@ -329,19 +594,12 @@ export default function ArchivePage() {
     file.fileUrl ? setPreviewFileUrl(file.fileUrl) : alert('URL이 없습니다.');
   const closePreview = () => setPreviewFileUrl(null);
 
-  // — 삭제 / 이름 변경
-  const handleDeleteFolder = id => {
-    if (!window.confirm('삭제하시겠습니까?')) return;
-    const next = folders.filter(f => f.id !== id);
-    setFolders(next);
-    localStorage.setItem('folders', JSON.stringify(next));
+  const getFolderPathById = (id) => {
+    const folder = folders.find(f => f.id === id);
+    return folder ? folder.path : [];
   };
-  const handleDeleteFile = id => {
-    if (!window.confirm('삭제하시겠습니까?')) return;
-    const next = files.filter(f => f.id !== id);
-    setFiles(next);
-    localStorage.setItem('files', JSON.stringify(next));
-  };
+
+
   const handleRenameFile = async file => {
     const newName = prompt('새 이름을 입력하세요', file.name);
     if (!newName || newName === file.name) return;
@@ -434,11 +692,13 @@ export default function ArchivePage() {
             <li key={f.id} className="folder-node" style={{paddingLeft: depth *16+'px'}}>
               <div
                 onClick={() => {
-                  toggleExpand(childKey);   // → “폴더 아래 드롭다운 펼치기/접기”
+                  toggleExpand(childKey);   // → “폴더 아래 뒤로드안 포토 포탈 포트 열기/접기”
                   handleFolderClick(f);     // → “메인 화면을 해당 폴더(경로)로 이동”
                 }}
               >
-                <img src="/mini_folder.png" className="sidebar-icon" alt="folder" />
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="sidebar-icon">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.75V12A2.25 2.25 0 0 1 4.5 9.75h15A2.25 2.25 0 0 1 21.75 12v.75m-8.69-6.44-2.12-2.12a1.5 1.5 0 0 0-1.061-.44H4.5A2.25 2.25 0 0 0 2.25 6v12a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9a2.25 2.25 0 0 0-2.25-2.25h-5.379a1.5 1.5 0 0 1-1.06-.44Z" />
+                </svg>
                 <span>{f.name}</span>
               </div>
 
@@ -452,10 +712,12 @@ export default function ArchivePage() {
           <li
             key={fi.id}
             className="file-node"
-            style={{ paddingLeft: depth*16+'px'}}
+            style={{ paddingLeft: depth*15+'px'}}
             onClick={() => handleFileDoubleClick(fi)}
           >
-            <img src="/mini_file.png" className="sidebar-icon" alt="file" />
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 23 23" strokeWidth="1.5" stroke="currentColor" className="sidebar-icon">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+            </svg>
             <span>{fi.name}</span>
           </li>
         ))}
@@ -641,16 +903,61 @@ export default function ArchivePage() {
             </div>
 
             {sortedFolders.map(f => (
-              <div
-                key={f.id}
-                className="folder-box"
-                onClick={() => handleFolderClick(f)}
-                onContextMenu={e => { e.preventDefault(); handleDeleteFolder(f.id); }}
-              >
+              <div key={f.id} className="folder-box" style={{ position: 'relative' }}>
                 <img src="/folder.png" className="folder-icon" alt="folder" />
-                <div className="folder-name">{f.name}</div>
+              
+                <div className="folder-name-row">
+                  <div className="folder-name">{f.name}</div>
+              
+                  <button
+                    className="dropdown-toggle clean-toggle"
+                    onClick={() =>
+                      setFolderDropdownOpenId(folderDropdownOpenId === f.id ? null : f.id)
+                    }
+                  >
+                    <svg
+                      className="dropdown-icon"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="1.5"
+                        d="M19.5 8.25l-7.5 7.5-7.5-7.5"
+                      />
+                    </svg>
+                  </button>
+              
+                  {folderDropdownOpenId === f.id && (
+                    <div className="dropdown-menu">
+                      <button onClick={() => handleRenameFolderClick(f)}>이름 변경</button>
+                      <button onClick={() => handleMoveClick(f.id, true)}>이동</button>
+                      <button onClick={() => handleDeleteFolder(f.id)}>삭제</button>
+                    </div>
+                  )}
+                </div>
               </div>
             ))}
+
+          
+            {renameFolderModalOpen && (
+              <div className="modal-overlay" onClick={() => setRenameFolderModalOpen(false)}>
+                <div className="modal-content" onClick={e => e.stopPropagation()}>
+                  <h3>폴더 이름 변경</h3>
+                  <input
+                    className="rename-input"
+                    value={renameFolderInput}
+                    onChange={e => setRenameFolderInput(e.target.value)}
+                  />
+                  <div className="modal-actions">
+                    <button onClick={confirmRenameFolder}>확인</button>
+                    <button onClick={() => setRenameFolderModalOpen(false)}>취소</button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {isAddingFolder && (
               <div className="folder-box new-folder">
@@ -681,19 +988,56 @@ export default function ArchivePage() {
               <div className="no-results"></div>
             )}
             {sortedFiles.map(file => (
-              <div
-                key={file.id}
-                className="file-box"
-                onDoubleClick={() => handleFileDoubleClick(file)}
-                onContextMenu={e => {
-                  e.preventDefault();
-                  const action = window.confirm('이름 변경: OK, 삭제: Cancel') ? 'rename' : 'delete';
-                  if (action === 'rename') handleRenameFile(file);
-                  else handleDeleteFile(file.id);
-                }}
-              >
+              <div key={file.id} className="file-box" >
                 <img src="/pdf-thumbnail.png" className="file-thumbnail" alt="file" />
-                <div className="file-name">{file.name}</div>
+
+                <div className="file-name-with-toggle">
+                  <div className="file-name">{file.name}</div>
+
+                  <div className="file-actions">
+                  <button
+                    className="dropdown-toggle clean-toggle"
+                    onClick={() =>
+                      setDropdownOpenId(dropdownOpenId === file.id ? null : file.id)
+                    }
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      padding: 0,
+                      marginLeft: '6px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                    }}
+                    aria-label="더보기"
+                  >
+                    <svg
+                      className="dropdown-icon"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      strokeWidth="1.5"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M19.5 8.25l-7.5 7.5-7.5-7.5"
+                      />
+                    </svg>
+                  </button>
+
+
+                    {dropdownOpenId === file.id && (
+                      <div className="dropdown-menu">
+                        <button onClick={() => handleRenameClick(file)}> 이름 변경</button>
+                        <button onClick={() => handleMoveClick(file.id, null)}> 이동</button>
+                        <button onClick={() => handleDeleteClick(file.id)}> 삭제</button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
                 <div className="file-uploader">
                   {file.uploaderName}님 업로드
                 </div>
@@ -707,6 +1051,120 @@ export default function ArchivePage() {
               <div className="archive-modal-content" onClick={e => e.stopPropagation()}>
                 <iframe src={previewFileUrl} title="PDF Preview" style={{ border: 'none' }} />
                 <button className="archive-close-btn" onClick={closePreview}>닫기</button>
+              </div>
+            </div>
+          )}
+
+          {fileMoveModalOpen && (
+            <div className="modal-overlay" onClick={() => setFileMoveModalOpen(false)}>
+              <div className="modal-content move-modal" onClick={e => e.stopPropagation()}>
+                <h3>이동할 폴더 선택</h3>
+                
+                <ul className="folder-selection-list">
+                  {moveFolders.length > 0 ? (
+                    moveFolders
+                    .filter(folder => folder.folderId !== moveTargetFolderId)
+                    .map(folder => (
+                      <li key={folder.folderId} className="folder-item">
+                        <div
+                          onClick={() => loadMoveFolderContents(folder.folderId)}
+                          className="folder-name-clickable folder-flex-row"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="move-folder-icon" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 9.776c.112-.017.227-.026.344-.026h15.812c.117 0 .232.009.344.026m-16.5 0a2.25 2.25 0 0 0-1.883 2.542l.857 6a2.25 2.25 0 0 0 2.227 1.932H19.05a2.25 2.25 0 0 0 2.227-1.932l.857-6a2.25 2.25 0 0 0-1.883-2.542m-16.5 0V6A2.25 2.25 0 0 1 6 3.75h3.879a1.5 1.5 0 0 1 1.06.44l2.122 2.12a1.5 1.5 0 0 0 1.06.44H18A2.25 2.25 0 0 1 20.25 9v.776" />
+                          </svg>
+                          <span>{folder.folderName}</span>
+                        </div>
+                        <button
+                          className="move-confirm-btn"
+                          onClick={() => confirmFileMove(folder.folderId)}
+                        >
+                          이동
+                        </button>
+                      </li>
+                    ))
+                  ) : (
+                    <li className="no-subfolder-message">하위 폴더가 없습니다.</li>
+                  )}
+                </ul>
+
+                <div className="move-path">
+                  <span className="current-path">현재 경로: /{moveFolderStack.map(p => p.name).join(' / ')}</span>
+
+                  {moveFolderStack.length > 0 && (
+                    <button
+                      className="move-back-btn"
+                      onClick={() => {
+                        if (moveFolderStack.length === 1) {
+                          loadMoveFolderContents(null);
+                          setMoveFolderStack([]);
+                        } else {
+                          const updatedStack = [...moveFolderStack];
+                          updatedStack.pop();
+                          setMoveFolderStack(updatedStack);
+                          const last = updatedStack[updatedStack.length - 1];
+                          loadMoveFolderContents(last.id);
+                        }
+                      }}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="back-icon" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 15 3 9m0 0 6-6M3 9h12a6 6 0 0 1 0 12h-3" />
+                      </svg>
+                      <span>뒤로가기</span>
+                    </button>
+                  )}
+                </div>
+
+
+                <button className="modal-close-btn" onClick={() => setFileMoveModalOpen(false)}>
+                  닫기
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* ✅ 삭제 확인 모달 */}
+          {deleteModalOpen && (
+            <div className="modal-overlay" onClick={() => setDeleteModalOpen(false)}>
+              <div className="modal-content delete-modal small" onClick={e => e.stopPropagation()}>
+                <h3> 정말 삭제할까요? 🗑️</h3>
+                <p>이 작업은 되돌릴 수 없습니다.</p>
+                <div className="modal-actions">
+                  <button onClick={confirmDelete}>삭제하기</button>
+                  <button onClick={() => setDeleteModalOpen(false)}>취소</button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ✅ 폴더 삭제 확인 모달 */}
+          {folderDeleteModalOpen && (
+            <div className="modal-overlay" onClick={() => setFolderDeleteModalOpen(false)}>
+              <div className="modal-content delete-modal small" onClick={e => e.stopPropagation()}>
+                <h3>정말 삭제할까요? 🗑️</h3>
+                <p>이 작업은 되돌릴 수 없습니다.</p>
+                <div className="modal-actions">
+                  <button onClick={confirmFolderDelete}>삭제하기</button>
+                  <button onClick={() => setFolderDeleteModalOpen(false)}>취소</button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ✅ 이름 변경 모달 추가 위치 */}
+          {renameModalOpen && (
+            <div className="modal-overlay" onClick={() => setRenameModalOpen(false)}>
+              <div className="modal-content" onClick={e => e.stopPropagation()}>
+                <h3>이름 변경</h3>
+                <input
+                  className="rename-input"
+                  value={renameInput}
+                  onChange={e => setRenameInput(e.target.value)}
+                />
+                <div className="modal-actions">
+                  <button onClick={confirmRename}>확인</button>
+                  <button onClick={() => setRenameModalOpen(false)}>취소</button>
+                </div>
               </div>
             </div>
           )}
