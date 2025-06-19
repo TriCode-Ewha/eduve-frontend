@@ -77,6 +77,9 @@ export default function ArchivePage() {
 
   const [moveTargetFolderId, setMoveTargetFolderId] = useState(null);
 
+  const [folderDeleteModalOpen, setFolderDeleteModalOpen] = useState(false);
+  const [deleteTargetFolderId, setDeleteTargetFolderId] = useState(null);
+
   // — 사이드바 트리 확장 상태
   const [expandedPaths, setExpandedPaths] = useState([]);
   const toggleExpand = pathKey => {
@@ -133,17 +136,23 @@ export default function ArchivePage() {
     }
   };
   
-  // (4) 폴더 삭제 핸들러
-  const handleDeleteFolder = async (folderId) => {
-    if (!window.confirm('정말 삭제하시겠습니까?')) return;
+  const handleDeleteFolder = (folderId) => {
+    setDeleteTargetFolderId(folderId);
+    setFolderDeleteModalOpen(true);
+  };
+
+  const confirmFolderDelete = async () => {
     try {
-      await deleteFolder(folderId);
-      const next = folders.filter(f => f.id !== folderId);
+      await deleteFolder(deleteTargetFolderId);
+      const next = folders.filter(f => f.id !== deleteTargetFolderId);
       setFolders(next);
       localStorage.setItem('folders', JSON.stringify(next));
     } catch (err) {
       console.error('폴더 삭제 실패', err);
       alert('폴더 삭제 실패');
+    } finally {
+      setFolderDeleteModalOpen(false);
+      setDeleteTargetFolderId(null);
     }
   };
 
@@ -672,11 +681,13 @@ export default function ArchivePage() {
             <li key={f.id} className="folder-node" style={{paddingLeft: depth *16+'px'}}>
               <div
                 onClick={() => {
-                  toggleExpand(childKey);   // → “폴더 아래 드롭다운 펼치기/접기”
+                  toggleExpand(childKey);   // → “폴더 아래 뒤로드안 포토 포탈 포트 열기/접기”
                   handleFolderClick(f);     // → “메인 화면을 해당 폴더(경로)로 이동”
                 }}
               >
-                <img src="/mini_folder.png" className="sidebar-icon" alt="folder" />
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="sidebar-icon">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.75V12A2.25 2.25 0 0 1 4.5 9.75h15A2.25 2.25 0 0 1 21.75 12v.75m-8.69-6.44-2.12-2.12a1.5 1.5 0 0 0-1.061-.44H4.5A2.25 2.25 0 0 0 2.25 6v12a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9a2.25 2.25 0 0 0-2.25-2.25h-5.379a1.5 1.5 0 0 1-1.06-.44Z" />
+                </svg>
                 <span>{f.name}</span>
               </div>
 
@@ -690,10 +701,12 @@ export default function ArchivePage() {
           <li
             key={fi.id}
             className="file-node"
-            style={{ paddingLeft: depth*16+'px'}}
+            style={{ paddingLeft: depth*15+'px'}}
             onClick={() => handleFileDoubleClick(fi)}
           >
-            <img src="/mini_file.png" className="sidebar-icon" alt="file" />
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 23 23" strokeWidth="1.5" stroke="currentColor" className="sidebar-icon">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+            </svg>
             <span>{fi.name}</span>
           </li>
         ))}
@@ -1007,7 +1020,9 @@ export default function ArchivePage() {
                 
                 <ul className="folder-selection-list">
                   {moveFolders.length > 0 ? (
-                    moveFolders.map(folder => (
+                    moveFolders
+                    .filter(folder => folder.folderId !== moveTargetFolderId)
+                    .map(folder => (
                       <li key={folder.folderId} className="folder-item">
                         <div
                           onClick={() => loadMoveFolderContents(folder.folderId)}
@@ -1075,6 +1090,20 @@ export default function ArchivePage() {
                 <div className="modal-actions">
                   <button onClick={confirmDelete}>삭제하기</button>
                   <button onClick={() => setDeleteModalOpen(false)}>취소</button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ✅ 폴더 삭제 확인 모달 */}
+          {folderDeleteModalOpen && (
+            <div className="modal-overlay" onClick={() => setFolderDeleteModalOpen(false)}>
+              <div className="modal-content delete-modal small" onClick={e => e.stopPropagation()}>
+                <h3>정말 삭제할까요? 🗑️</h3>
+                <p>이 작업은 되돌릴 수 없습니다.</p>
+                <div className="modal-actions">
+                  <button onClick={confirmFolderDelete}>삭제하기</button>
+                  <button onClick={() => setFolderDeleteModalOpen(false)}>취소</button>
                 </div>
               </div>
             </div>
