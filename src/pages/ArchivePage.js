@@ -410,6 +410,7 @@ export default function ArchivePage() {
           uploaderId:   ff.userId,
           uploaderRole: ff.role,
           uploaderName: ff.username,
+          owner:        ff.owner,
         }));
     
         let existingFiles = [];
@@ -697,6 +698,52 @@ export default function ArchivePage() {
     return true;
   });
 
+  const handleFolderClickByPath = async (targetPath) => {
+    setCurrentPath(targetPath);
+  
+    const folder = folders.find(f => JSON.stringify(f.path) === JSON.stringify(targetPath.slice(0, -1)) && f.name === targetPath[targetPath.length - 1]);
+  
+    if (!folder) return; // 해당 폴더를 못 찾았을 경우 방지
+  
+    try {
+      const res = await fetchFolderContents(currentUserId, folder.id, sortOrder);
+  
+      const { folders: subFolders = [], files: subFiles = [] } = res.data;
+  
+      const newFetchedFolders = subFolders.map(sf => ({
+        id: sf.id,
+        name: sf.name,
+        path: targetPath
+      }));
+  
+      const newFetchedFiles = subFiles.map(ff => ({
+        id: ff.fileId,
+        name: ff.fileName,
+        path: targetPath,
+        fileUrl: ff.fileUrl,
+        uploaderId: ff.userId,
+        uploaderRole: ff.role,
+        uploaderName: ff.username
+      }));
+  
+      setFolders(prev => {
+        const merged = [...prev, ...newFetchedFolders];
+        localStorage.setItem('folders', JSON.stringify(merged));
+        return merged;
+      });
+  
+      setFiles(prev => {
+        const merged = [...prev, ...newFetchedFiles];
+        localStorage.setItem('files', JSON.stringify(merged));
+        return merged;
+      });
+  
+    } catch (err) {
+      console.error('트리 폴더 클릭 실패', err);
+    }
+  };
+  
+
   const sortedFolders = sortOrder === 'name'
     ? [...displayFolders].sort((a, b) => a.name.localeCompare(b.name, 'ko'))
     : displayFolders;
@@ -722,7 +769,7 @@ export default function ArchivePage() {
                 onClick={() => {
 
                   toggleExpand(childKey);   // → “폴더 아래 드롭다운 펼치기/접기”
-
+                  handleFolderClickByPath([...path, f.name]);
                 }}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="sidebar-icon">
@@ -901,7 +948,7 @@ export default function ArchivePage() {
             </div>
 
             {sortedFolders.map(f => (
-              <div key={f.id} className="folder-box" style={{ position: 'relative' }}>
+              <div key={f.id} className="folder-box" style={{ position: 'relative' }} onClick={() => handleFolderClick(f)}>
                 <img src="/folder.png" className="folder-icon" alt="folder" />
               
                 <div className="folder-name-row">
@@ -986,7 +1033,7 @@ export default function ArchivePage() {
               <div className="no-results"></div>
             )}
             {sortedFiles.map(file => (
-              <div key={file.id} className="file-box" >
+              <div key={file.id} className="file-box" onDoubleClick={() => handleFileDoubleClick(file)}>
                 <img src="/pdf-thumbnail.png" className="file-thumbnail" alt="file" />
 
                 <div className="file-name-with-toggle">
@@ -1037,7 +1084,7 @@ export default function ArchivePage() {
                 </div>
 
                 <div className="file-uploader">
-                  {file.uploaderName}님 업로드
+                  {file.owner}님 업로드
                 </div>
               </div>
             ))}
