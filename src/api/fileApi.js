@@ -30,7 +30,7 @@ export const fetchFile = fileId =>
 export const renameFile = (fileId, newName) =>
   axiosInstance.patch(
     `/resources/file/${fileId}/rename`,
-    { name: newName }
+    { newName }
   );
 
 /**
@@ -38,10 +38,10 @@ export const renameFile = (fileId, newName) =>
  * @param {string|number} fileId
  * @param {string|number} folderId
  */
-export const moveFile = (fileId, folderId) =>
+export const moveFile = (fileId, newFolderId) =>
   axiosInstance.patch(
     `/resources/file/${fileId}/move`,
-    { folderId }
+    { newFolderId }
   );
 
 /**
@@ -87,10 +87,33 @@ export const fetchFolderContents = (userId, folderId, sort = null) => {
   const query = sort ? `?sort=${encodeURIComponent(sort)}` : '';
   if (folderId == null) {
     // parentId 없이 최상위(홈) 경로 조회
-    return axiosInstance.get(`/folders/user/${userId}/folder${query}`);
+    return axiosInstance.get(`/folders/user/${userId}${query}`);
   } else {
     // 특정 하위 폴더를 지정해서 조회
     return axiosInstance.get(`/folders/user/${userId}/folder/${folderId}${query}`);
   }
 };
 
+
+/**
+ * 폴더 이름 변경
+ * PATCH /folders/{folderId}?newFolderName={name}
+ */
+export const renameFolder = (folderId, newFolderName, userId) =>
+  axiosInstance.patch(`/folders/${folderId}?newFolderName=${encodeURIComponent(newFolderName)}&userId=${userId}`);
+
+/**
+ * 폴더 이동
+ * PUT /folders/{folderId}/path?newParentFolderId={id}&userId={userId}
+ */
+export const moveFolder = (folderId, newParentFolderId, userId) =>
+  axiosInstance.patch(
+    `/folders/${folderId}/path?newParentFolderId=${newParentFolderId}&userId=${userId}`
+  );
+
+/**
+ * 폴더 삭제
+ * DELETE /folders/{folderId}
+ */
+export const deleteFolder = (folderId) =>
+  axiosInstance.delete(`/folders/${folderId}`);
