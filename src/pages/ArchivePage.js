@@ -1076,7 +1076,11 @@ export default function ArchivePage() {
             )}
             {sortedFiles.map(file => (
               <div key={file.id} className="file-box" onDoubleClick={() => handleFileDoubleClick(file)}>
-                <img src="/pdf-thumbnail.png" className="file-thumbnail" alt="file" />
+                <img
+                  src={getThumbnailSrc(file)}
+                  className="file-thumbnail"
+                  alt="file"
+                />
 
                 <div className="file-name-with-toggle">
                   <div className="file-name">{file.name}</div>
