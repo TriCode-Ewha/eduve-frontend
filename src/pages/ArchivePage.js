@@ -631,31 +631,39 @@ export default function ArchivePage() {
 
   // — PDF 미리보기
   const handleFileDoubleClick = async (file) => {
-    if (!file.id) {
-      alert('파일 ID가 없습니다.');
+  if (!file.id) {
+    alert('파일 ID가 없습니다.');
+    return;
+  }
+
+  try {
+    if (file.name.endsWith('.txt') && file.content) {
+      // ✅ 백엔드에서 이미 텍스트 content를 준 경우 → 바로 사용
+      setTxtContent(file.content);
+      setPreviewFileUrl(null); // 텍스트는 iframe 등 미리보기 URL 필요 없음
       return;
     }
-  
-    try {
-      const res = await fetchFile(file.id);  // 📌 파일 조회 API 호출
-      const realUrl = res.data.fileUrl;      // ✅ 응답에서 fileUrl 추출
-      const encodeUrl = encodeURI(realUrl);
-  
-      if (file.name.endsWith('.txt')) {
-        const textRes = await fetch(encodeUrl, {mode: 'cors'});
-        const text = await textRes.text();
-        setTxtContent(text);
-      } else {
-        setTxtContent(null);
-      }
-  
-      setPreviewFileUrl(realUrl); // ✅ 최종적으로 미리보기 URL 설정
-  
-    } catch (err) {
-      console.error('파일 미리보기 실패', err);
-      alert('파일 미리보기에 실패했습니다.');
+
+    // ✅ 백엔드 content가 없다면 → fileUrl로 fetch
+    const res = await fetchFile(file.id);
+    const realUrl = res.data.fileUrl;
+    const encodedUrl = encodeURI(realUrl);
+
+    if (file.name.endsWith('.txt')) {
+      const textRes = await fetch(encodedUrl, { mode: 'cors' });
+      const text = await textRes.text();
+      setTxtContent(text);
+      setPreviewFileUrl(null);
+    } else {
+      setTxtContent(null);
+      setPreviewFileUrl(realUrl); // pdf/docx 등은 URL로 미리보기
     }
-  };
+
+  } catch (err) {
+    console.error('파일 미리보기 실패', err);
+    alert('파일 미리보기에 실패했습니다.');
+  }
+};
   
 
 
@@ -1160,13 +1168,22 @@ export default function ArchivePage() {
           </div>
 
           {/* PDF 미리보기 모달 */}
-          {previewFileUrl && (
+          {(txtContent || previewFileUrl) && (
             <div className="archive-modal-overlay" onClick={closePreview}>
               <div className="archive-modal-content" onClick={(e) => e.stopPropagation()}>
                 {txtContent ? (
-                  <pre style={{ whiteSpace: 'pre-wrap', padding: '20px', maxHeight: '70vh', overflowY: 'auto' }}>
+                  <div
+                    style={{
+                      whiteSpace: 'pre-line',
+                      padding: '20px',
+                      maxHeight: '70vh',
+                      overflowY: 'auto',
+                      fontFamily: 'monospace',
+                      fontSize: '14px',
+                    }}
+                  >
                     {txtContent}
-                  </pre>
+                  </div>
                 ) : previewFileUrl.endsWith('.docx') ? (
                   <iframe
                     src={`https://docs.google.com/gview?url=${previewFileUrl}&embedded=true`}
@@ -1190,6 +1207,7 @@ export default function ArchivePage() {
               </div>
             </div>
           )}
+
 
           {fileMoveModalOpen && (
             <div className="modal-overlay" onClick={() => setFileMoveModalOpen(false)}>
