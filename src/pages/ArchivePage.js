@@ -641,7 +641,7 @@ export default function ArchivePage() {
       const realUrl = res.data.fileUrl;      // ✅ 응답에서 fileUrl 추출
   
       if (file.name.endsWith('.txt')) {
-        const textRes = await fetch(realUrl);
+        const textRes = await fetch(realUrl, {mode: 'cors'});
         const text = await textRes.text();
         setTxtContent(text);
       } else {
