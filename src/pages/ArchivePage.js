@@ -190,6 +190,24 @@ export default function ArchivePage() {
     setFileMoveModalOpen(true);
     await loadMoveFolderContents(null, true);
   };
+
+  const flattenFolderTree = (folderNode, basePath = []) => {
+    const current = {
+      id: folderNode.folderId,
+      name: folderNode.folderName,
+      path: [...basePath],
+    };
+  
+    const allFolders = [current];
+  
+    if (Array.isArray(folderNode.subFolders)) {
+      for (const sub of folderNode.subFolders) {
+        allFolders.push(...flattenFolderTree(sub, [...basePath, folderNode.folderName]));
+      }
+    }
+  
+    return allFolders;
+  };
   
 
   const loadMoveFolderContents = async (folderId, isRoot = false) => {
@@ -235,7 +253,6 @@ export default function ArchivePage() {
         );
         setFiles(next);
         localStorage.setItem('files', JSON.stringify(next));
-        alert('파일 이동 완료');
       } else if (moveTargetFolderId) {
         const res = await moveFolder(moveTargetFolderId, targetFolderId, currentUserId);
         const updatedPath = res.data.path;
@@ -244,7 +261,6 @@ export default function ArchivePage() {
         );
         setFolders(next);
         localStorage.setItem('folders', JSON.stringify(next));
-        alert('폴더 이동 완료');
       }
     } catch (err) {
       console.error('이동 실패', err);
@@ -453,50 +469,54 @@ export default function ArchivePage() {
   };
 
   // — 폴더 클릭: breadcrumb 이동 + 하위 폴더·파일 조회 API 호출
-  const handleFolderClick = useCallback(
-    async folder => {
-      // 1) 메인 화면을 해당 폴더 안으로 바꾸기 위해 currentPath 갱신
-      const newPath = [...currentPath, folder.name];
-      setCurrentPath(newPath);
-
-      // 2) API에서 하위 폴더/파일 불러와서 state에 병합
-      try {
-        const res = await fetchFolderContents(currentUserId, folder.id, sortOrder);
-        const { folders: subFolders = [], files: subFiles = [] } = res.data;
-
-        // ── 하위 폴더 state에 추가 ──
-        const newFetchedFolders = subFolders.map(sf => ({
-          id: sf.id,
-          name: sf.name,
-          path: newPath
-        }));
-        setFolders(prev => {
-          const merged = [...prev, ...newFetchedFolders];
-          localStorage.setItem('folders', JSON.stringify(merged));
-          return merged;
-        });
-
-        // ── 하위 파일 state에 추가 ──
-        const newFetchedFiles = subFiles.map(ff => ({
-          id: ff.fileId,
-          name: ff.fileName,
-          path: newPath,
-          fileUrl: ff.fileUrl,
-          uploaderId: ff.userId,
-          uploaderRole: ff.role,
-          uploaderName: ff.username
-        }));
-        setFiles(prev => {
-          const merged = [...prev, ...newFetchedFiles];
-          localStorage.setItem('files', JSON.stringify(merged));
-          return merged;
-        });
-      } catch (err) {
-        console.error('하위 폴더 및 파일 가져오기 실패', err);
-      }
-    },
-    [currentPath, currentUserId, sortOrder]
-  );
+  const handleFolderClick = useCallback(async (folder) => {
+    const newPath = [...currentPath, folder.name];
+    setCurrentPath(newPath);
+  
+    try {
+      const res = await fetchFolderContents(currentUserId, folder.id, sortOrder);
+      const { subFolders = [], files: subFiles = [] } = res.data;
+  
+      const newFolders = subFolders.map(sf => ({
+        id: sf.folderId,
+        name: sf.folderName,
+        path: newPath
+      }));
+  
+      const newFiles = subFiles.map(f => ({
+        id: f.fileId,
+        name: f.fileName,
+        path: newPath,
+        fileUrl: f.fileUrl,
+        uploaderId: f.userId,
+        uploaderRole: f.role,
+        uploaderName: f.username,
+        fileOwner: f.fileOwner  // ✅ 여기에 'ming' 들어있음
+      }));
+  
+      // 현재 path에 해당하는 폴더들만 덮어쓰기
+      setFolders(prev => {
+        const filtered = prev.filter(f => JSON.stringify(f.path) !== JSON.stringify(newPath));
+        const merged = [...filtered, ...newFolders];
+        localStorage.setItem('folders', JSON.stringify(merged));
+        return merged;
+      });
+  
+      // 현재 path에 해당하는 파일들만 덮어쓰기
+      setFiles(prev => {
+        const filtered = prev.filter(f => JSON.stringify(f.path) !== JSON.stringify(newPath));
+        const merged = [...filtered, ...newFiles];
+        localStorage.setItem('files', JSON.stringify(merged));
+        return merged;
+      });
+  
+    } catch (err) {
+      console.error('하위 폴더 및 파일 가져오기 실패', err);
+      alert('폴더 열기에 실패했습니다.');
+    }
+  }, [currentPath, currentUserId, sortOrder]);
+  
+  
 
   // — Add 메뉴 토글
   const handleAddFolderStart = () => {
@@ -611,27 +631,31 @@ export default function ArchivePage() {
 
   // — PDF 미리보기
   const handleFileDoubleClick = async (file) => {
-  if (!file.fileUrl) {
-    alert('URL이 없습니다.');
-    return;
-  }
-
-  // 텍스트 파일이면 fetch로 읽기
-  if (file.name.endsWith('.txt')) {
-    try {
-      const res = await fetch(file.fileUrl);
-      const text = await res.text(); // 기본이 UTF-8
-      setTxtContent(text);
-      setPreviewFileUrl(file.fileUrl); // 모달 트리거용
-    } catch (err) {
-      console.error('TXT 미리보기 오류', err);
-      alert('텍스트 파일을 불러오는 데 실패했습니다.');
+    if (!file.id) {
+      alert('파일 ID가 없습니다.');
+      return;
     }
-  } else {
-    setTxtContent(null); // 다른 파일 누르면 txt 내용 초기화
-    setPreviewFileUrl(file.fileUrl);
-  }
-};
+  
+    try {
+      const res = await fetchFile(file.id);  // 📌 파일 조회 API 호출
+      const realUrl = res.data.fileUrl;      // ✅ 응답에서 fileUrl 추출
+  
+      if (file.name.endsWith('.txt')) {
+        const textRes = await fetch(realUrl);
+        const text = await textRes.text();
+        setTxtContent(text);
+      } else {
+        setTxtContent(null);
+      }
+  
+      setPreviewFileUrl(realUrl); // ✅ 최종적으로 미리보기 URL 설정
+  
+    } catch (err) {
+      console.error('파일 미리보기 실패', err);
+      alert('파일 미리보기에 실패했습니다.');
+    }
+  };
+  
 
 
   const getFolderPathById = (id) => {
@@ -763,24 +787,24 @@ export default function ArchivePage() {
     ? [...displayFiles].sort((a, b) => a.name.localeCompare(b.name, 'ko'))
     : displayFiles;
 
-  // ── 사이드바 재귀 렌더링 함수 (수정됨) ──
+  // — 사이드바 트리 재귀 렌더링
   const renderTree = (path = [], depth = 0) => {
     const key = JSON.stringify(path);
-    const subsF = folders.filter(f => JSON.stringify(f.path) === key&&Boolean(f.name));
-    const subsI = files.filter(f => JSON.stringify(f.path) === key&&Boolean(f.name));
-    if (!subsF.length && !subsI.length) return null;
+    const subsF = folders.filter(f => JSON.stringify(f.path) === key && Boolean(f.name));
+    const subsI = files.filter(f => JSON.stringify(f.path) === key && Boolean(f.name));
 
     return (
       <ul>
         {subsF.map(f => {
-          const childKey = JSON.stringify([...path, f.name]);
+          const childPath = [...path, f.name];
+          const childKey = JSON.stringify(childPath);
+
           return (
-            <li key={f.id} className="folder-node" style={{paddingLeft: depth *16+'px'}}>
+            <li key={f.id} className="folder-node" style={{ paddingLeft: depth * 16 + 'px' }}>
               <div
                 onClick={() => {
-
-                  toggleExpand(childKey);   // → “폴더 아래 드롭다운 펼치기/접기”
-                  handleFolderClickByPath([...path, f.name]);
+                  toggleExpand(childKey);
+                  handleFolderClick(f);
                 }}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="sidebar-icon">
@@ -788,9 +812,7 @@ export default function ArchivePage() {
                 </svg>
                 <span>{f.name}</span>
               </div>
-
-              {/* → isExpanded(childKey)이면 재귀적으로 하위 트리 그리기 */}
-              {isExpanded(childKey) && renderTree([...path, f.name], depth + 1)}
+              {isExpanded(childKey) && renderTree(childPath, depth + 1)}
             </li>
           );
         })}
@@ -799,7 +821,7 @@ export default function ArchivePage() {
           <li
             key={fi.id}
             className="file-node"
-            style={{ paddingLeft: depth*15+'px'}}
+            style={{ paddingLeft: depth * 15 + 'px' }}
             onClick={() => handleFileDoubleClick(fi)}
           >
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 23 23" strokeWidth="1.5" stroke="currentColor" className="sidebar-icon">
@@ -1130,7 +1152,7 @@ export default function ArchivePage() {
                 </div>
 
                 <div className="file-uploader">
-                  {file.owner}님 업로드
+                  {(file.fileOwner || file.owner || file.uploaderName) + '님 업로드'}
                 </div>
               </div>
             ))}
