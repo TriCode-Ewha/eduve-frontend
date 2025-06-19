@@ -375,7 +375,7 @@ const ChatArea = ({ messages, setMessages, username }) => {
       {/* PDF 미리보기 모달 */}
       {previewPdfUrl && (
         <div
-          className="modal-overlay"
+          className="chat-modal-overlay"
           onClick={closePdfPreview}
           style={{
             position: 'fixed',
@@ -391,7 +391,7 @@ const ChatArea = ({ messages, setMessages, username }) => {
           }}
         >
           <div
-            className="modal-content"
+            className="chat-modal-content"
             onClick={(e) => e.stopPropagation()}
             style={{
               width: '85vw',
