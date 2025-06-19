@@ -93,3 +93,128 @@
   bottom: 20px;
   filter: drop-shadow(10px 5px 10px rgb(96, 94, 94));
 }
+
+/* 유저 설정 모달창 */
+/* 모달 배경 */
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0,0,0,0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+/* 모달 창 */
+.modal-content {
+  background: white;
+  border-radius: 8px;
+  padding: 24px;
+  width: 400px;
+  max-width: 90%;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  position: relative;
+  font-family: 'Noto Sans KR', sans-serif;
+}
+
+/* 제목 */
+.modal-content h2 {
+  margin-top: 0;
+  margin-bottom: 16px;
+}
+
+/* 입력창 */
+.name-input {
+  width: 100%;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  font-size: 1rem;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  outline: none;
+  box-sizing: border-box;
+}
+
+/* 버튼 기본 */
+button {
+  cursor: pointer;
+  font-family: 'Noto Sans KR', sans-serif;
+}
+
+/* 이름 변경 버튼 */
+.btn-primary {
+  background-color: #1B512D;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin-bottom: 16px;
+  width: 100%;
+  font-size: 1rem;
+}
+
+/* 탈퇴 버튼 */
+.btn-danger {
+  background-color: #e53e3e;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 14px;
+  width: 100%;
+  font-size: 1rem;
+}
+
+.btn-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: none;
+  border: none;
+  border-radius: 50%;
+  width: 48px;            /* 기존보다 더 큼 */
+  height: 48px;           /* 기존보다 더 큼 */
+  font-weight: bold;
+  font-size: 22px;        /* 텍스트도 더 큼 */
+  line-height: 48px;      /* 가운데 정렬 유지 */
+  text-align: center;
+  color: #333;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-close:hover {
+  background: #aaa;
+}
+
+/* 에러 메시지 */
+.modal-content p {
+  color: red;
+  margin-bottom: 16px;
+}
+
+/* 회원정보 텍스트 */
+.user-info p {
+  margin: 6px 0;
+  font-size: 1rem;
+  color: black;
+}
+
+.profile-image {
+  width: 30%;
+  height: auto;            
+  object-fit: cover;
+  border-radius: 50%;
+  margin-bottom: 16px;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.btn-disabled {
+  background-color: white;
+  color: #999;
+  border: 1px solid #ccc;
+}
