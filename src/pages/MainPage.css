@@ -96,7 +96,7 @@
 
 /* 유저 설정 모달창 */
 /* 모달 배경 */
-.modal-overlay {
+.main-modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -110,7 +110,7 @@
 }
 
 /* 모달 창 */
-.modal-content {
+.main-modal-content {
   background: white;
   border-radius: 8px;
   padding: 32px;
@@ -126,7 +126,7 @@
 }
 
 /* 제목 */
-.modal-content h2 {
+.main-modal-content h2 {
   margin-top: 0;
   margin-bottom: 16px;
 }
