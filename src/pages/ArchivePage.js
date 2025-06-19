@@ -1186,9 +1186,18 @@ export default function ArchivePage() {
             <div className="archive-modal-overlay" onClick={closePreview}>
               <div className="archive-modal-content" onClick={(e) => e.stopPropagation()}>
                 {txtContent ? (
-                  <pre style={{ whiteSpace: 'pre-wrap', padding: '20px', maxHeight: '70vh', overflowY: 'auto' }}>
+                  <div
+                    style={{
+                      whiteSpace: 'pre-line',
+                      padding: '20px',
+                      maxHeight: '70vh',
+                      overflowY: 'auto',
+                      fontFamily: 'monospace',
+                      fontSize: '14px',
+                    }}
+                  >
                     {txtContent}
-                  </pre>
+                  </div>
                 ) : previewFileUrl.endsWith('.docx') ? (
                   <iframe
                     src={`https://docs.google.com/gview?url=${previewFileUrl}&embedded=true`}
