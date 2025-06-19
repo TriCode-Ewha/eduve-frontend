@@ -23,6 +23,8 @@ import ClipLoader from "react-spinners/ClipLoader";
 export default function ArchivePage() {
   const navigate = useNavigate();
 
+  const [previewContent, setPreviewContent] = useState('');
+
   // 로딩 스피너 
   const [isLoading, setIsLoading] = useState(false);
 
@@ -635,7 +637,7 @@ export default function ArchivePage() {
       alert('파일 ID가 없습니다.');
       return;
     }
-  
+  /*
     try {
       const res = await fetchFile(file.id);  // 📌 파일 조회 API 호출
       const realUrl = res.data.fileUrl;      // ✅ 응답에서 fileUrl 추출
@@ -653,6 +655,26 @@ export default function ArchivePage() {
     } catch (err) {
       console.error('파일 미리보기 실패', err);
       alert('파일 미리보기에 실패했습니다.');
+    } */
+
+    if (!file.name.endsWith('.txt')) {
+      try {
+      const res = await fetchFile(file.id);  // 📌 파일 조회 API 호출
+      const realUrl = res.data.fileUrl;      // ✅ 응답에서 fileUrl 추출
+  
+      setPreviewFileUrl(realUrl); // ✅ 최종적으로 미리보기 URL 설정
+  
+      } catch (err) {
+        console.error('파일 미리보기 실패', err);
+        alert('파일 미리보기에 실패했습니다.');
+      }
+    } else {
+      const res = await fetchFile(file.id);
+      const content = res.data.content;
+      console.log(content);
+
+      setPreviewContent(content);  
+      setPreviewFileUrl('txt');    
     }
   };
   
@@ -1159,6 +1181,7 @@ export default function ArchivePage() {
           </div>
 
           {/* PDF 미리보기 모달 */}
+          {/*
           {previewFileUrl && (
             <div className="archive-modal-overlay" onClick={closePreview}>
               <div className="archive-modal-content" onClick={(e) => e.stopPropagation()}>
@@ -1188,7 +1211,48 @@ export default function ArchivePage() {
                 <button className="archive-close-btn" onClick={closePreview}>닫기</button>
               </div>
             </div>
-          )}
+          )} */}
+          {(previewFileUrl || previewContent) && (
+          <div className="archive-modal-overlay" onClick={closePreview}>
+            <div className="archive-modal-content" onClick={(e) => e.stopPropagation()}>
+              
+              {previewContent ? (
+                // ✅ 텍스트 미리보기
+                <pre style={{
+                  whiteSpace: 'pre-wrap',
+                  padding: '20px',
+                  maxHeight: '70vh',
+                  overflowY: 'auto',
+                  fontSize: '14px',
+                  lineHeight: '1.6'
+                }}>
+                  {previewContent}
+                </pre>
+              ) : previewFileUrl.endsWith('.docx') ? (
+                <iframe
+                  src={`https://docs.google.com/gview?url=${previewFileUrl}&embedded=true`}
+                  title="DOCX 미리보기"
+                  style={{ width: '100%', height: '70vh', border: 'none' }}
+                />
+              ) : previewFileUrl.match(/\.(jpg|jpeg|png)$/) ? (
+                <img
+                  src={previewFileUrl}
+                  alt="이미지 미리보기"
+                  style={{ maxWidth: '100%', maxHeight: '70vh', objectFit: 'contain' }}
+                />
+              ) : (
+                <iframe
+                  src={previewFileUrl}
+                  title="파일 미리보기"
+                  style={{ width: '100%', height: '70vh', border: 'none' }}
+                />
+              )}
+
+              <button className="archive-close-btn" onClick={closePreview}>닫기</button>
+            </div>
+          </div>
+        )}
+
 
           {fileMoveModalOpen && (
             <div className="modal-overlay" onClick={() => setFileMoveModalOpen(false)}>
