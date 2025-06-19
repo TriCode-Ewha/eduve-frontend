@@ -49,6 +49,8 @@ export default function ArchivePage() {
   const [files, setFiles] = useState([]);
   const [currentPath, setCurrentPath] = useState([]);
   const [previewFileUrl, setPreviewFileUrl] = useState(null);
+  const [txtContent, setTxtContent] = useState(null);
+
   // import 하단부나 useEffect 위쪽에 추가
   const [dropdownOpenId, setDropdownOpenId] = useState(null);
 
@@ -94,6 +96,22 @@ export default function ArchivePage() {
     );
   };
   const isExpanded = pathKey => expandedPaths.includes(pathKey);
+
+
+  const closePreview = () => {
+  setPreviewFileUrl(null);
+  setTxtContent(null); // 텍스트 상태도 초기화
+  };
+
+  //썸네일 지정
+  const getThumbnailSrc = (file) => {
+  const ext = file.name.split('.').pop().toLowerCase();
+  if (ext === 'pdf') return '/pdf-thumbnail.png';
+  if (ext === 'docx') return '/doc-thumbnail.png';
+  if (ext === 'txt') return '/txt-thumbnail.png';
+  if (['jpg', 'jpeg', 'png'].includes(ext)) return file.fileUrl; // 이미지 원본 썸네일
+  return '/pdf-thumbnail.png'; // 기본 썸네일
+};
 
 
   const handleRenameFolderClick = (folder) => {
@@ -532,6 +550,7 @@ export default function ArchivePage() {
   const handleFileSelect = async e => {
     const file = e.target.files[0];
     if (!file) return;
+    console.log('✅ 선택한 파일:', file); 
 
     setIsLoading(true); // 로딩 시작
     
@@ -590,9 +609,29 @@ export default function ArchivePage() {
 
 
   // — PDF 미리보기
-  const handleFileDoubleClick = file =>
-    file.fileUrl ? setPreviewFileUrl(file.fileUrl) : alert('URL이 없습니다.');
-  const closePreview = () => setPreviewFileUrl(null);
+  const handleFileDoubleClick = async (file) => {
+  if (!file.fileUrl) {
+    alert('URL이 없습니다.');
+    return;
+  }
+
+  // 텍스트 파일이면 fetch로 읽기
+  if (file.name.endsWith('.txt')) {
+    try {
+      const res = await fetch(file.fileUrl);
+      const text = await res.text(); // 기본이 UTF-8
+      setTxtContent(text);
+      setPreviewFileUrl(file.fileUrl); // 모달 트리거용
+    } catch (err) {
+      console.error('TXT 미리보기 오류', err);
+      alert('텍스트 파일을 불러오는 데 실패했습니다.');
+    }
+  } else {
+    setTxtContent(null); // 다른 파일 누르면 txt 내용 초기화
+    setPreviewFileUrl(file.fileUrl);
+  }
+};
+
 
   const getFolderPathById = (id) => {
     const folder = folders.find(f => f.id === id);
@@ -692,8 +731,9 @@ export default function ArchivePage() {
             <li key={f.id} className="folder-node" style={{paddingLeft: depth *16+'px'}}>
               <div
                 onClick={() => {
-                  toggleExpand(childKey);   // → “폴더 아래 뒤로드안 포토 포탈 포트 열기/접기”
-                  handleFolderClick(f);     // → “메인 화면을 해당 폴더(경로)로 이동”
+
+                  toggleExpand(childKey);   // → “폴더 아래 드롭다운 펼치기/접기”
+
                 }}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="sidebar-icon">
@@ -974,7 +1014,7 @@ export default function ArchivePage() {
             )}
           </div>
 
-          {/* 숨겨진 파일 업로드 input */}
+          {/* 사이드바 숨겨진 파일 업로드 input */}
           <input
             id="file-upload"
             type="file"
@@ -1048,8 +1088,30 @@ export default function ArchivePage() {
           {/* PDF 미리보기 모달 */}
           {previewFileUrl && (
             <div className="archive-modal-overlay" onClick={closePreview}>
-              <div className="archive-modal-content" onClick={e => e.stopPropagation()}>
-                <iframe src={previewFileUrl} title="PDF Preview" style={{ border: 'none' }} />
+              <div className="archive-modal-content" onClick={(e) => e.stopPropagation()}>
+                {txtContent ? (
+                  <pre style={{ whiteSpace: 'pre-wrap', padding: '20px', maxHeight: '70vh', overflowY: 'auto' }}>
+                    {txtContent}
+                  </pre>
+                ) : previewFileUrl.endsWith('.docx') ? (
+                  <iframe
+                    src={`https://docs.google.com/gview?url=${previewFileUrl}&embedded=true`}
+                    title="파일 미리보기"
+                    style={{ width: '100%', height: '70vh', border: 'none' }}
+                  />
+                ) : previewFileUrl.match(/\.(jpg|jpeg|png)$/) ? (
+                  <img
+                    src={previewFileUrl}
+                    alt="이미지 미리보기"
+                    style={{ maxWidth: '100%', maxHeight: '70vh', objectFit: 'contain' }}
+                  />
+                ) : (
+                  <iframe
+                    src={previewFileUrl}
+                    title="파일 미리보기"
+                    style={{ width: '100%', height: '70vh', border: 'none' }}
+                  />
+                )}
                 <button className="archive-close-btn" onClick={closePreview}>닫기</button>
               </div>
             </div>
