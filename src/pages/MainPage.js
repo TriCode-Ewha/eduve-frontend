@@ -108,15 +108,15 @@ const UserSettingsModal = ({ userId, onClose, onNameChange }) => {
 
   if (loading)
     return (
-      <div className="modal-overlay">
-        <div className="modal-content">로딩 중...</div>
+      <div className="main-modal-overlay">
+        <div className="main-modal-content">로딩 중...</div>
       </div>
     );
 
   if (error)
     return (
-      <div className="modal-overlay">
-        <div className="modal-content">
+      <div className="main-modal-overlay">
+        <div className="main-modal-content">
           <p>{error}</p>
           <button onClick={handleModalClose}>x</button>
         </div>
@@ -124,8 +124,8 @@ const UserSettingsModal = ({ userId, onClose, onNameChange }) => {
     );
 
   return (
-    <div className="modal-overlay" onClick={handleModalClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+    <div className="main-modal-overlay" onClick={handleModalClose}>
+      <div className="main-modal-content" onClick={(e) => e.stopPropagation()}>
         <h2>회원 설정</h2>
         {userInfo && (
           <div className="user-info">
